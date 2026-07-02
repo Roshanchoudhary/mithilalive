@@ -10,11 +10,11 @@
             config: {
                 backend: {
                     name: 'github',
-                    repo: 'Roshanchoudhary',  // ← अपना सही username डालें
+                    repo: 'Roshanchoudhary/mithilalive',  // ✅ सही – username/repo
                     branch: 'main',
                     auth_scope: 'repo',
-                    app_id: 'Ov23liLrAMX04YS8WWB5',  // ← आपका Client ID
-                    base_url: 'https://mithilalive.pages.dev',  // ← सिर्फ base_url, auth_endpoint नहीं!
+                    app_id: 'Ov23liLrAMX04YS8WWB5',  // ✅ Client ID (Secret की ज़रूरत नहीं)
+                    // ⚠️ base_url हटा दें – Cloudflare Pages OAuth सपोर्ट नहीं करता
                 },
                 media_folder: 'images',
                 public_folder: '/images',
