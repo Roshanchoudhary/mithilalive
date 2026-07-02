@@ -1,0 +1,25 @@
+backend:
+  name: github
+  repo: आपका-username/my-news-site   # ← अपना username और repo name डालू
+  branch: main
+
+media_folder: images
+public_folder: /images
+
+collections:
+  - name: "news"
+    label: "समाचार"
+    folder: "_news"
+    create: true
+    slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
+    fields:
+      - { label: "शीर्षक (Title)", name: "title", widget: "string" }
+      - { label: "तिथि (Date)", name: "date", widget: "datetime" }
+      - { label: "श्रेणी (Category)", name: "category", widget: "select", options: ["राजनीति", "खेल", "टेक्नोलॉजी", "मनोरंजन"] }
+      - { label: "तस्वीर (Image)", name: "image", widget: "image", required: false }
+      - { label: "समाचार (Content)", name: "body", widget: "markdown" }
+      # ===== SEO FIELDS (हर पोस्ट में अलग SEO) =====
+      - { label: "SEO Title", name: "seo_title", widget: "string", required: false }
+      - { label: "SEO Description", name: "seo_description", widget: "text", required: false }
+      - { label: "SEO Keywords", name: "seo_keywords", widget: "string", required: false }
+      - { label: "Slug (URL)", name: "slug", widget: "string", required: false }
