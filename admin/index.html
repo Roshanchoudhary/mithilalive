@@ -4,8 +4,46 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>समाचार एडमिन – दैनिक समाचार मैथिली</title>
+    <script src="https://cdn.jsdelivr.net/npm/decap-cms@^3.0.0/dist/decap-cms.js"></script>
+    <script>
+        CMS.init({
+            config: {
+                backend: {
+                    name: 'github',
+                    repo: 'आपका-username/my-news-site',  // ← अपना username/repo डालें
+                    branch: 'main',
+                    // === OAuth Credentials ===
+                    auth_scope: 'repo',
+                    app_id: 'Ov23liLrAMX04YS8WWB5',  // ← GitHub OAuth App से Client ID डालें
+                    base_url: 'https://mithilalive.pages.dev',  // ← अपनी site URL
+                    auth_endpoint: 'https://mithilalive.pages.dev/admin/',  // ← Redirect URL
+                },
+                media_folder: 'images',
+                public_folder: '/images',
+                collections: [
+                    {
+                        name: 'news',
+                        label: 'समाचार',
+                        folder: '_news',
+                        create: true,
+                        slug: '{{year}}-{{month}}-{{day}}-{{slug}}',
+                        fields: [
+                            { label: 'शीर्षक', name: 'title', widget: 'string' },
+                            { label: 'तिथि', name: 'date', widget: 'datetime' },
+                            { label: 'श्रेणी', name: 'category', widget: 'select', options: ['राजनीति', 'खेल', 'टेक्नोलॉजी', 'मनोरंजन'] },
+                            { label: 'तस्वीर', name: 'image', widget: 'image', required: false },
+                            { label: 'समाचार', name: 'body', widget: 'markdown' },
+                            { label: 'SEO Title', name: 'seo_title', widget: 'string', required: false },
+                            { label: 'SEO Description', name: 'seo_description', widget: 'text', required: false },
+                            { label: 'SEO Keywords', name: 'seo_keywords', widget: 'string', required: false },
+                            { label: 'Slug', name: 'slug', widget: 'string', required: false }
+                        ]
+                    }
+                ]
+            }
+        });
+    </script>
 </head>
 <body>
-    <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
 </body>
 </html>
