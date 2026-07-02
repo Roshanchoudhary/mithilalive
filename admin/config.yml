@@ -1,6 +1,6 @@
 backend:
   name: github
-  repo: आपका-Roshanchoudhary/mithilalive   # ← अपना username और repo name डालू
+  repo: Roshanchoudhary/mithilalive   # ← अपना username और repo name डालू
   branch: main
 
 media_folder: images
