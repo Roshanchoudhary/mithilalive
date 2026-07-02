@@ -6,15 +6,71 @@
     <title>समाचार एडमिन – मिथिला लाइव</title>
     <script src="https://cdn.jsdelivr.net/npm/decap-cms@^3.0.0/dist/decap-cms.js"></script>
     <script>
+        // ============================================================
+        // यह CMS को Basic Auth (यूज़रनेम/पासवर्ड) के साथ लोड करता है
+        // ============================================================
+        
+        // ⚠️ अपना यूज़रनेम और पासवर्ड यहाँ डालें
+        const USERNAME = 'mithila';
+        const PASSWORD = 'Mithila@2026';
+
+        // पासवर्ड चेक करें
+        function checkAuth() {
+            const auth = localStorage.getItem('cms_auth');
+            if (auth) {
+                const [user, pass] = atob(auth).split(':');
+                if (user === USERNAME && pass === PASSWORD) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // अगर पासवर्ड नहीं है तो Login Form दिखाएँ
+        if (!checkAuth()) {
+            document.body.innerHTML = `
+                <div style="font-family: 'Noto Sans Devanagari', sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0;">
+                    <div style="background: white; padding: 40px; border-radius: 16px; box-shadow: 0 8px 30px rgba(0,0,0,0.12); width: 350px; text-align: center;">
+                        <h2 style="color: #1a1a2e; margin-bottom: 8px;">🔐 मिथिला लाइव</h2>
+                        <p style="color: #666; font-size: 14px; margin-bottom: 25px;">Admin Panel में प्रवेश के लिए लॉगिन करें</p>
+                        <form id="loginForm" style="text-align: left;">
+                            <input type="text" id="username" placeholder="यूज़रनेम" required autofocus style="width: 100%; padding: 12px; margin: 8px 0; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box;">
+                            <input type="password" id="password" placeholder="पासवर्ड" required style="width: 100%; padding: 12px; margin: 8px 0; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box;">
+                            <button type="submit" style="width: 100%; padding: 12px; background: #e74c3c; color: white; border: none; border-radius: 8px; font-size: 18px; font-weight: 700; cursor: pointer;">लॉगिन करें</button>
+                            <div id="error" style="color: #e74c3c; font-size: 14px; margin-top: 12px; display: none;">❌ गलत यूज़रनेम या पासवर्ड</div>
+                        </form>
+                    </div>
+                </div>
+                <script>
+                    document.getElementById('loginForm').addEventListener('submit', function(e) {
+                        e.preventDefault();
+                        const username = document.getElementById('username').value;
+                        const password = document.getElementById('password').value;
+                        if (username === '${USERNAME}' && password === '${PASSWORD}') {
+                            localStorage.setItem('cms_auth', btoa(username + ':' + password));
+                            location.reload();
+                        } else {
+                            document.getElementById('error').style.display = 'block';
+                        }
+                    });
+                <\/script>
+            `;
+            // CMS को लोड न करें – सिर्फ Login Form दिखे
+            throw new Error('Authentication required');
+        }
+
+        // ============================================================
+        // CMS Configuration (बिल्कुल वैसा ही – कोई बदलाव नहीं)
+        // ============================================================
         CMS.init({
             config: {
                 backend: {
-                    name: 'github',  // ✅ 'github' स्पष्ट रूप से सेट है
+                    name: 'github',
                     repo: 'Roshanchoudhary/mithilalive',
                     branch: 'main',
                     auth_scope: 'repo',
                     app_id: 'Ov23liLrAMX04YS8WWB5',
-                    // ⚠️ base_url को हटा दिया गया है – यही Netlify पर जाने से रोकता है
+                    // ⚠️ base_url और auth_endpoint हटा दें – Netlify OAuth नहीं चाहिए
                 },
                 media_folder: 'images',
                 public_folder: '/images',
