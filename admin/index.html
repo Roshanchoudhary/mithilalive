@@ -3,67 +3,158 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Login – मिथिला लाइव</title>
+    <title>Admin – मिथिला लाइव</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; }
-        .login-box { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); width: 380px; text-align: center; }
-        .login-box h2 { color: #1a1a2e; margin-bottom: 8px; font-size: 28px; }
-        .login-box p { color: #666; margin-bottom: 30px; }
-        .login-box input { width: 100%; padding: 14px; margin: 10px 0; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 16px; transition: 0.3s; }
-        .login-box input:focus { border-color: #e74c3c; outline: none; }
-        .login-box button { width: 100%; padding: 14px; background: #e74c3c; color: white; border: none; border-radius: 10px; font-size: 18px; font-weight: 700; cursor: pointer; transition: 0.3s; }
-        .login-box button:hover { background: #c0392b; transform: scale(1.02); }
-        .error { color: #e74c3c; margin-top: 15px; display: none; font-weight: 600; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+        }
+        .login-box { 
+            background: white; 
+            padding: 40px; 
+            border-radius: 20px; 
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3); 
+            width: 380px; 
+            text-align: center; 
+        }
+        .login-box h2 { 
+            color: #1a1a2e; 
+            margin-bottom: 8px; 
+            font-size: 28px; 
+        }
+        .login-box .subtitle { 
+            color: #666; 
+            margin-bottom: 30px; 
+            font-size: 14px; 
+        }
+        .login-box input { 
+            width: 100%; 
+            padding: 14px; 
+            margin: 10px 0; 
+            border: 2px solid #e0e0e0; 
+            border-radius: 10px; 
+            font-size: 16px; 
+            transition: 0.3s; 
+        }
+        .login-box input:focus { 
+            border-color: #667eea; 
+            outline: none; 
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        }
+        .login-box button { 
+            width: 100%; 
+            padding: 14px; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; 
+            border: none; 
+            border-radius: 10px; 
+            font-size: 18px; 
+            font-weight: 700; 
+            cursor: pointer; 
+            transition: 0.3s; 
+            margin-top: 10px;
+        }
+        .login-box button:hover { 
+            transform: scale(1.02); 
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        .error { 
+            color: #e74c3c; 
+            margin-top: 15px; 
+            display: none; 
+            font-weight: 600; 
+            padding: 10px;
+            background: #fde8e8;
+            border-radius: 8px;
+        }
+        .loading {
+            display: none;
+            margin-top: 15px;
+            color: #666;
+        }
+        .logo {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
     <div class="login-box">
-        <h2>🔐 मिथिला लाइव</h2>
-        <p>Admin Panel में प्रवेश करें</p>
+        <div class="logo">📰</div>
+        <h2>मिथिला लाइव</h2>
+        <p class="subtitle">Admin Panel में प्रवेश करें</p>
+        
         <form id="loginForm">
             <input type="text" id="username" placeholder="यूज़रनेम" required autofocus>
             <input type="password" id="password" placeholder="पासवर्ड" required>
-            <button type="submit">लॉगिन करें</button>
+            <button type="submit">🔐 लॉगिन करें</button>
             <div id="error" class="error">❌ गलत यूज़रनेम या पासवर्ड</div>
+            <div id="loading" class="loading">⏳ CMS लोड हो रहा है...</div>
         </form>
     </div>
 
     <script>
-        // ⚠️ अपना यूज़रनेम और पासवर्ड यहाँ डालें
+        // ⚠️ अपना यूज़रनेम और पासवर्ड यहाँ बदलें
         const USERNAME = 'mithila';
         const PASSWORD = 'Mithila@2026';
 
+        // पहले से लॉगिन है तो सीधा CMS लोड करें
+        if (localStorage.getItem('cms_auth')) {
+            loadCMS();
+        }
+
         document.getElementById('loginForm').addEventListener('submit', function(e) {
             e.preventDefault();
+            
             const user = document.getElementById('username').value;
             const pass = document.getElementById('password').value;
+            const errorDiv = document.getElementById('error');
+            const loadingDiv = document.getElementById('loading');
             
             if (user === USERNAME && pass === PASSWORD) {
-                // लॉगिन सफल – CMS Load करें
+                // सही पासवर्ड – CMS लोड करें
                 localStorage.setItem('cms_auth', btoa(user + ':' + pass));
+                errorDiv.style.display = 'none';
+                loadingDiv.style.display = 'block';
                 loadCMS();
             } else {
-                document.getElementById('error').style.display = 'block';
+                errorDiv.style.display = 'block';
+                setTimeout(() => {
+                    errorDiv.style.display = 'none';
+                }, 3000);
             }
         });
 
         function loadCMS() {
-            // CMS Script Load करें
+            // Login Box छिपाएँ
+            document.querySelector('.login-box').innerHTML = `
+                <div style="padding: 20px;">
+                    <div style="font-size: 48px; margin-bottom: 20px;">⏳</div>
+                    <h2 style="color: #1a1a2e;">CMS लोड हो रहा है...</h2>
+                    <p style="color: #666; margin-top: 10px;">कृपया कुछ सेकंड प्रतीक्षा करें</p>
+                </div>
+            `;
+
+            // Decap CMS Script लोड करें
             const script = document.createElement('script');
             script.src = 'https://cdn.jsdelivr.net/npm/decap-cms@^3.0.0/dist/decap-cms.js';
             document.head.appendChild(script);
 
-            // CMS Configuration
             script.onload = function() {
+                // CMS Configuration – बिना किसी OAuth / Login के
                 CMS.init({
                     config: {
                         backend: {
                             name: 'github',
                             repo: 'Roshanchoudhary/mithilalive',
                             branch: 'main',
-                            auth_scope: 'repo',
-                            app_id: 'Ov23liLrAMX04YS8WWB5',
+                            // ⚠️ महत्वपूर्ण: auth_scope, app_id, base_url सब हटा दिया
+                            // अब CMS केवल config.yml पर निर्भर है
                         },
                         media_folder: 'images',
                         public_folder: '/images',
@@ -77,7 +168,7 @@
                                 fields: [
                                     { label: 'शीर्षक', name: 'title', widget: 'string' },
                                     { label: 'तिथि', name: 'date', widget: 'datetime' },
-                                    { label: 'श्रेणी', name: 'category', widget: 'select', options: ['राजनीति', 'खेल', 'टेक्नोलॉजी', 'मनोरंजन', 'स्थानीय', 'अंतर्राष्ट्रीय'] },
+                                    { label: 'श्रेणी', name: 'category', widget: 'select', options: ['राजनीति', 'खेल', 'टेक्नोलॉजी', 'मनोरंजन'] },
                                     { label: 'तस्वीर', name: 'image', widget: 'image', required: false },
                                     { label: 'समाचार', name: 'body', widget: 'markdown' },
                                     { label: 'SEO Title', name: 'seo_title', widget: 'string', required: false },
@@ -90,12 +181,17 @@
                     }
                 });
             };
-        }
 
-        // अगर पहले से लॉगिन है तो सीधा CMS Load करें
-        if (localStorage.getItem('cms_auth')) {
-            document.body.innerHTML = '<div style="text-align: center; padding: 50px; font-size: 20px;">⏳ CMS लोड हो रहा है...</div>';
-            loadCMS();
+            script.onerror = function() {
+                document.querySelector('.login-box').innerHTML = `
+                    <div style="padding: 20px;">
+                        <div style="font-size: 48px; margin-bottom: 20px;">❌</div>
+                        <h2 style="color: #e74c3c;">CMS लोड नहीं हो पाया</h2>
+                        <p style="color: #666; margin-top: 10px;">कृपया पेज रिफ्रेश करें और फिर लॉगिन करें</p>
+                        <button onclick="location.reload()" style="margin-top: 20px; padding: 12px 30px; background: #667eea; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer;">पुनः प्रयास करें</button>
+                    </div>
+                `;
+            };
         }
     </script>
 </body>
