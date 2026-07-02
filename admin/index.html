@@ -1,103 +1,102 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>समाचार एडमिन – मिथिला लाइव</title>
-    <script src="https://cdn.jsdelivr.net/npm/decap-cms@^3.0.0/dist/decap-cms.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login – मिथिला लाइव</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .login-box { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); width: 380px; text-align: center; }
+        .login-box h2 { color: #1a1a2e; margin-bottom: 8px; font-size: 28px; }
+        .login-box p { color: #666; margin-bottom: 30px; }
+        .login-box input { width: 100%; padding: 14px; margin: 10px 0; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 16px; transition: 0.3s; }
+        .login-box input:focus { border-color: #e74c3c; outline: none; }
+        .login-box button { width: 100%; padding: 14px; background: #e74c3c; color: white; border: none; border-radius: 10px; font-size: 18px; font-weight: 700; cursor: pointer; transition: 0.3s; }
+        .login-box button:hover { background: #c0392b; transform: scale(1.02); }
+        .error { color: #e74c3c; margin-top: 15px; display: none; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="login-box">
+        <h2>🔐 मिथिला लाइव</h2>
+        <p>Admin Panel में प्रवेश करें</p>
+        <form id="loginForm">
+            <input type="text" id="username" placeholder="यूज़रनेम" required autofocus>
+            <input type="password" id="password" placeholder="पासवर्ड" required>
+            <button type="submit">लॉगिन करें</button>
+            <div id="error" class="error">❌ गलत यूज़रनेम या पासवर्ड</div>
+        </form>
+    </div>
+
     <script>
-        // ============================================================
-        // यह CMS को Basic Auth (यूज़रनेम/पासवर्ड) के साथ लोड करता है
-        // ============================================================
-        
         // ⚠️ अपना यूज़रनेम और पासवर्ड यहाँ डालें
         const USERNAME = 'mithila';
         const PASSWORD = 'Mithila@2026';
 
-        // पासवर्ड चेक करें
-        function checkAuth() {
-            const auth = localStorage.getItem('cms_auth');
-            if (auth) {
-                const [user, pass] = atob(auth).split(':');
-                if (user === USERNAME && pass === PASSWORD) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        // अगर पासवर्ड नहीं है तो Login Form दिखाएँ
-        if (!checkAuth()) {
-            document.body.innerHTML = `
-                <div style="font-family: 'Noto Sans Devanagari', sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0;">
-                    <div style="background: white; padding: 40px; border-radius: 16px; box-shadow: 0 8px 30px rgba(0,0,0,0.12); width: 350px; text-align: center;">
-                        <h2 style="color: #1a1a2e; margin-bottom: 8px;">🔐 मिथिला लाइव</h2>
-                        <p style="color: #666; font-size: 14px; margin-bottom: 25px;">Admin Panel में प्रवेश के लिए लॉगिन करें</p>
-                        <form id="loginForm" style="text-align: left;">
-                            <input type="text" id="username" placeholder="यूज़रनेम" required autofocus style="width: 100%; padding: 12px; margin: 8px 0; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box;">
-                            <input type="password" id="password" placeholder="पासवर्ड" required style="width: 100%; padding: 12px; margin: 8px 0; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box;">
-                            <button type="submit" style="width: 100%; padding: 12px; background: #e74c3c; color: white; border: none; border-radius: 8px; font-size: 18px; font-weight: 700; cursor: pointer;">लॉगिन करें</button>
-                            <div id="error" style="color: #e74c3c; font-size: 14px; margin-top: 12px; display: none;">❌ गलत यूज़रनेम या पासवर्ड</div>
-                        </form>
-                    </div>
-                </div>
-                <script>
-                    document.getElementById('loginForm').addEventListener('submit', function(e) {
-                        e.preventDefault();
-                        const username = document.getElementById('username').value;
-                        const password = document.getElementById('password').value;
-                        if (username === '${USERNAME}' && password === '${PASSWORD}') {
-                            localStorage.setItem('cms_auth', btoa(username + ':' + password));
-                            location.reload();
-                        } else {
-                            document.getElementById('error').style.display = 'block';
-                        }
-                    });
-                <\/script>
-            `;
-            // CMS को लोड न करें – सिर्फ Login Form दिखे
-            throw new Error('Authentication required');
-        }
-
-        // ============================================================
-        // CMS Configuration (बिल्कुल वैसा ही – कोई बदलाव नहीं)
-        // ============================================================
-        CMS.init({
-            config: {
-                backend: {
-                    name: 'github',
-                    repo: 'Roshanchoudhary/mithilalive',
-                    branch: 'main',
-                    auth_scope: 'repo',
-                    app_id: 'Ov23liLrAMX04YS8WWB5',
-                    // ⚠️ base_url और auth_endpoint हटा दें – Netlify OAuth नहीं चाहिए
-                },
-                media_folder: 'images',
-                public_folder: '/images',
-                collections: [
-                    {
-                        name: 'news',
-                        label: 'समाचार',
-                        folder: '_news',
-                        create: true,
-                        slug: '{{year}}-{{month}}-{{day}}-{{slug}}',
-                        fields: [
-                            { label: 'शीर्षक', name: 'title', widget: 'string' },
-                            { label: 'तिथि', name: 'date', widget: 'datetime' },
-                            { label: 'श्रेणी', name: 'category', widget: 'select', options: ['राजनीति', 'खेल', 'टेक्नोलॉजी', 'मनोरंजन', 'स्थानीय', 'अंतर्राष्ट्रीय'] },
-                            { label: 'तस्वीर', name: 'image', widget: 'image', required: false },
-                            { label: 'समाचार', name: 'body', widget: 'markdown' },
-                            { label: 'SEO Title', name: 'seo_title', widget: 'string', required: false },
-                            { label: 'SEO Description', name: 'seo_description', widget: 'text', required: false },
-                            { label: 'SEO Keywords', name: 'seo_keywords', widget: 'string', required: false },
-                            { label: 'Slug', name: 'slug', widget: 'string', required: false }
-                        ]
-                    }
-                ]
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const user = document.getElementById('username').value;
+            const pass = document.getElementById('password').value;
+            
+            if (user === USERNAME && pass === PASSWORD) {
+                // लॉगिन सफल – CMS Load करें
+                localStorage.setItem('cms_auth', btoa(user + ':' + pass));
+                loadCMS();
+            } else {
+                document.getElementById('error').style.display = 'block';
             }
         });
+
+        function loadCMS() {
+            // CMS Script Load करें
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/decap-cms@^3.0.0/dist/decap-cms.js';
+            document.head.appendChild(script);
+
+            // CMS Configuration
+            script.onload = function() {
+                CMS.init({
+                    config: {
+                        backend: {
+                            name: 'github',
+                            repo: 'Roshanchoudhary/mithilalive',
+                            branch: 'main',
+                            auth_scope: 'repo',
+                            app_id: 'Ov23liLrAMX04YS8WWB5',
+                        },
+                        media_folder: 'images',
+                        public_folder: '/images',
+                        collections: [
+                            {
+                                name: 'news',
+                                label: 'समाचार',
+                                folder: '_news',
+                                create: true,
+                                slug: '{{year}}-{{month}}-{{day}}-{{slug}}',
+                                fields: [
+                                    { label: 'शीर्षक', name: 'title', widget: 'string' },
+                                    { label: 'तिथि', name: 'date', widget: 'datetime' },
+                                    { label: 'श्रेणी', name: 'category', widget: 'select', options: ['राजनीति', 'खेल', 'टेक्नोलॉजी', 'मनोरंजन', 'स्थानीय', 'अंतर्राष्ट्रीय'] },
+                                    { label: 'तस्वीर', name: 'image', widget: 'image', required: false },
+                                    { label: 'समाचार', name: 'body', widget: 'markdown' },
+                                    { label: 'SEO Title', name: 'seo_title', widget: 'string', required: false },
+                                    { label: 'SEO Description', name: 'seo_description', widget: 'text', required: false },
+                                    { label: 'SEO Keywords', name: 'seo_keywords', widget: 'string', required: false },
+                                    { label: 'Slug', name: 'slug', widget: 'string', required: false }
+                                ]
+                            }
+                        ]
+                    }
+                });
+            };
+        }
+
+        // अगर पहले से लॉगिन है तो सीधा CMS Load करें
+        if (localStorage.getItem('cms_auth')) {
+            document.body.innerHTML = '<div style="text-align: center; padding: 50px; font-size: 20px;">⏳ CMS लोड हो रहा है...</div>';
+            loadCMS();
+        }
     </script>
-</head>
-<body>
 </body>
 </html>
