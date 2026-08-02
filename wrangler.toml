@@ -1,0 +1,32 @@
+name = "news-portal-cms"
+main = "src/worker/index.ts"
+compatibility_date = "2024-04-05"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "news_db"
+database_id = "your-d1-database-id"
+
+[[kv_namespaces]]
+binding = "KV"
+id = "your-kv-namespace-id"
+
+[[r2_buckets]]
+binding = "R2"
+bucket_name = "news-media"
+
+[vars]
+JWT_SECRET = "your-jwt-secret-change-this"
+JWT_EXPIRY = "7d"
+BCRYPT_ROUNDS = "10"
+ADMIN_EMAIL = "admin@example.com"
+ADMIN_PASSWORD = "admin123"
+SITE_NAME = "News Portal"
+SITE_URL = "https://your-domain.com"
+CLOUDFLARE_ACCOUNT_ID = "your-account-id"
+
+[env.production]
+vars = { API_URL = "https://your-domain.com/api", NODE_ENV = "production" }
+
+[env.staging]
+vars = { API_URL = "https://staging.your-domain.com/api", NODE_ENV = "staging" }
