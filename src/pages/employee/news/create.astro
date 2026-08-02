@@ -1,0 +1,215 @@
+---
+import EmployeeLayout from '@/layouts/EmployeeLayout.astro';
+import { getSession } from '@/middleware/auth';
+import { createDb } from '@/db/index';
+
+const user = await getSession(Astro.request);
+if (!user || !['employee', 'editor', 'reporter'].includes(user.role)) {
+  return Astro.redirect('/employee/login');
+}
+
+const db = createDb();
+
+// Get categories for dropdown
+const categories = await db.execute({
+  sql: `SELECT id, name FROM categories WHERE is_active = 1 ORDER BY name ASC`
+});
+---
+
+<EmployeeLayout title="Create News">
+  <div class="max-w-4xl mx-auto">
+    <div class="flex items-center justify-between mb-6">
+      <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Create News Article</h1>
+      <a href="/employee/news" class="btn btn-secondary">← Back to My Articles</a>
+    </div>
+
+    <form id="newsForm" class="bg-white dark:bg-slate-800 rounded-lg shadow p-6 space-y-6">
+      <!-- Title -->
+      <div>
+        <label for="title" class="label">Title *</label>
+        <input 
+          type="text" 
+          id="title" 
+          name="title" 
+          class="input" 
+          placeholder="Enter article title"
+          required
+        />
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+          Slug will be automatically generated from the title
+        </p>
+      </div>
+
+      <!-- Category -->
+      <div>
+        <label for="category" class="label">Category</label>
+        <select id="category" name="category" class="input">
+          <option value="">Select Category</option>
+          {categories.results?.map(cat => (
+            <option key={cat.id} value={cat.id}>{cat.name}</option>
+          ))}
+        </select>
+      </div>
+
+      <!-- Summary -->
+      <div>
+        <label for="summary" class="label">Summary</label>
+        <textarea 
+          id="summary" 
+          name="summary" 
+          rows="3" 
+          class="input" 
+          placeholder="Brief summary of the article"
+        ></textarea>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+          Max 160 characters recommended for SEO
+        </p>
+      </div>
+
+      <!-- Content -->
+      <div>
+        <label for="content" class="label">Content *</label>
+        <textarea 
+          id="content" 
+          name="content" 
+          rows="15" 
+          class="input font-mono text-sm" 
+          placeholder="Write your article content here..."
+          required
+        ></textarea>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+          HTML tags allowed (p, h2, h3, ul, ol, li, blockquote, strong, em, a, img)
+        </p>
+      </div>
+
+      <!-- Featured Image -->
+      <div>
+        <label for="featuredImage" class="label">Featured Image URL</label>
+        <input 
+          type="url" 
+          id="featuredImage" 
+          name="featuredImage" 
+          class="input" 
+          placeholder="https://example.com/image.jpg"
+        />
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+          Upload images via Media Library or use URL
+        </p>
+      </div>
+
+      <!-- Tags -->
+      <div>
+        <label for="tags" class="label">Tags</label>
+        <input 
+          type="text" 
+          id="tags" 
+          name="tags" 
+          class="input" 
+          placeholder="tag1, tag2, tag3"
+        />
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+          Comma separated tags
+        </p>
+      </div>
+
+      <!-- SEO Fields -->
+      <details class="border border-slate-200 dark:border-slate-700 rounded-lg p-4">
+        <summary class="cursor-pointer font-medium text-slate-700 dark:text-slate-300">
+          SEO Settings (Optional)
+        </summary>
+        <div class="mt-4 space-y-4">
+          <div>
+            <label for="seoTitle" class="label">SEO Title</label>
+            <input type="text" id="seoTitle" name="seoTitle" class="input" placeholder="SEO optimized title" />
+          </div>
+          <div>
+            <label for="seoDescription" class="label">SEO Description</label>
+            <textarea id="seoDescription" name="seoDescription" rows="2" class="input" placeholder="SEO meta description"></textarea>
+          </div>
+          <div>
+            <label for="keywords" class="label">Keywords</label>
+            <input type="text" id="keywords" name="keywords" class="input" placeholder="keyword1, keyword2, keyword3" />
+          </div>
+        </div>
+      </details>
+
+      <!-- Submit -->
+      <div class="flex gap-3">
+        <button type="submit" name="action" value="draft" class="btn btn-secondary">
+          Save as Draft
+        </button>
+        <button type="submit" name="action" value="pending" class="btn btn-primary">
+          Submit for Review
+        </button>
+      </div>
+      <p class="text-sm text-slate-500 dark:text-slate-400">
+        Submitting for review will send your article to admins for approval.
+      </p>
+    </form>
+  </div>
+</EmployeeLayout>
+
+<script>
+  document.getElementById('newsForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const formData = new FormData(form);
+    const action = form.querySelector('button[clicked]')?.value || 'draft';
+
+    const data = {
+      title: formData.get('title'),
+      category_id: parseInt(formData.get('category')) || null,
+      summary: formData.get('summary'),
+      content: formData.get('content'),
+      featured_image: formData.get('featuredImage'),
+      tags: formData.get('tags')?.split(',').map(t => t.trim()).filter(Boolean) || [],
+      seo_title: formData.get('seoTitle'),
+      seo_description: formData.get('seoDescription'),
+      keywords: formData.get('keywords'),
+      status: action
+    };
+
+    const button = form.querySelector('button[type="submit"]');
+    const originalText = button.textContent;
+    button.textContent = 'Saving...';
+    button.disabled = true;
+
+    try {
+      const response = await fetch('/api/news', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        const message = action === 'draft' ? 'Draft saved successfully!' : 'Article submitted for review!';
+        alert(message);
+        window.location.href = '/employee/news';
+      } else {
+        alert(result.error || 'Failed to save article');
+      }
+    } catch {
+      alert('Network error. Please try again.');
+    } finally {
+      button.textContent = originalText;
+      button.disabled = false;
+    }
+  });
+
+  // Track which button was clicked
+  document.querySelectorAll('button[name="action"]').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('button[name="action"]').forEach(b => b.removeAttribute('clicked'));
+      this.setAttribute('clicked', 'true');
+    });
+  });
+
+  // Auto-generate slug preview (optional)
+  document.getElementById('title')?.addEventListener('input', function() {
+    // Optional: Show slug preview
+    const slug = this.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    // You could display this somewhere
+  });
+</script>
