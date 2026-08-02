@@ -1,0 +1,65 @@
+---
+export interface Props {
+  variant?: 'primary' | 'secondary' | 'success' | 'danger' | 'warning' | 'outline';
+  size?: 'sm' | 'md' | 'lg';
+  type?: 'button' | 'submit' | 'reset';
+  href?: string;
+  disabled?: boolean;
+  loading?: boolean;
+  className?: string;
+}
+
+const {
+  variant = 'primary',
+  size = 'md',
+  type = 'button',
+  href,
+  disabled = false,
+  loading = false,
+  className = '',
+} = Astro.props;
+
+const variantClasses = {
+  primary: 'btn-primary',
+  secondary: 'btn-secondary',
+  success: 'btn-success',
+  danger: 'btn-danger',
+  warning: 'bg-yellow-500 text-white hover:bg-yellow-600',
+  outline: 'btn-outline'
+};
+
+const sizeClasses = {
+  sm: 'px-3 py-1.5 text-sm',
+  md: 'px-4 py-2',
+  lg: 'px-6 py-3 text-lg'
+};
+
+const classes = `btn ${variantClasses[variant]} ${sizeClasses[size]} ${className}`;
+
+if (disabled) {
+  classes += ' opacity-50 cursor-not-allowed';
+}
+
+if (loading) {
+  classes += ' cursor-wait';
+}
+---
+
+{
+  href ? (
+    <a href={href} class={classes} role="button">
+      {loading && <span class="animate-spin mr-2">⏳</span>}
+      <slot />
+    </a>
+  ) : (
+    <button 
+      type={type} 
+      class={classes} 
+      disabled={disabled || loading}
+      aria-disabled={disabled || loading}
+    >
+      {loading && <span class="animate-spin mr-2">⏳</span>}
+      <slot />
+    </button>
+  )
+}
