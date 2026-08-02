@@ -1,0 +1,117 @@
+---
+import { getSession } from '@/middleware/auth';
+
+const user = await getSession(Astro.request);
+if (user && ['super_admin', 'admin'].includes(user.role)) {
+  return Astro.redirect('/admin');
+}
+---
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Login - {import.meta.env.SITE_NAME || 'News Portal'}</title>
+    <link rel="stylesheet" href="/styles/globals.css" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+  </head>
+  <body class="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 p-4">
+    <div class="w-full max-w-md">
+      <div class="bg-white dark:bg-slate-800 rounded-lg shadow-lg p-8">
+        <div class="text-center mb-8">
+          <h1 class="text-2xl font-bold text-slate-900 dark:text-white">
+            {import.meta.env.SITE_NAME || 'News Portal'}
+          </h1>
+          <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Admin Login</p>
+        </div>
+
+        <form id="loginForm" class="space-y-4">
+          <div>
+            <label for="email" class="label">Email Address</label>
+            <input 
+              type="email" 
+              id="email" 
+              name="email" 
+              class="input" 
+              placeholder="admin@example.com"
+              required
+              autofocus
+            />
+          </div>
+
+          <div>
+            <label for="password" class="label">Password</label>
+            <input 
+              type="password" 
+              id="password" 
+              name="password" 
+              class="input" 
+              placeholder="Enter your password"
+              required
+            />
+          </div>
+
+          <div id="errorMessage" class="hidden text-red-600 dark:text-red-400 text-sm bg-red-50 dark:bg-red-900/20 p-3 rounded-md">
+            Invalid email or password
+          </div>
+
+          <button type="submit" class="w-full btn btn-primary py-3">
+            Sign In
+          </button>
+        </form>
+
+        <div class="mt-6 text-center text-sm text-slate-500 dark:text-slate-400">
+          <p>Default credentials: admin@example.com / admin123</p>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const form = e.target;
+        const email = form.querySelector('#email').value;
+        const password = form.querySelector('#password').value;
+        const errorDiv = document.getElementById('errorMessage');
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalText = submitBtn.textContent;
+
+        try {
+          errorDiv.classList.add('hidden');
+          submitBtn.textContent = 'Signing in...';
+          submitBtn.disabled = true;
+
+          const response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+          });
+
+          const data = await response.json();
+
+          if (response.ok && data.success) {
+            window.location.href = '/admin';
+          } else {
+            errorDiv.textContent = data.error || 'Invalid credentials';
+            errorDiv.classList.remove('hidden');
+          }
+        } catch {
+          errorDiv.textContent = 'Network error. Please try again.';
+          errorDiv.classList.remove('hidden');
+        } finally {
+          submitBtn.textContent = originalText;
+          submitBtn.disabled = false;
+        }
+      });
+
+      // Enter key support
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          const form = document.getElementById('loginForm');
+          if (form) form.dispatchEvent(new Event('submit'));
+        }
+      });
+    </script>
+  </body>
+</html>
