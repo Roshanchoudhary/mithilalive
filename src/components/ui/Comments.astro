@@ -1,0 +1,251 @@
+---
+export interface Props {
+  newsId: number;
+  comments: any[];
+  user?: any;
+}
+
+const { newsId, comments = [], user } = Astro.props;
+---
+
+<div id="comments-section" class="mt-8">
+  <h3 class="text-2xl font-bold mb-4 text-slate-900 dark:text-white">
+    Comments ({comments.length})
+  </h3>
+
+  <!-- Comment Form -->
+  <form id="commentForm" class="mb-8 p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
+    <h4 class="font-semibold text-slate-900 dark:text-white mb-3">Leave a Comment</h4>
+    
+    {user ? (
+      <div class="mb-3 text-sm text-slate-600 dark:text-slate-400">
+        Commenting as <strong>{user.name}</strong>
+      </div>
+    ) : (
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+        <input 
+          type="text" 
+          id="commentName" 
+          placeholder="Your Name" 
+          class="input"
+          required
+        />
+        <input 
+          type="email" 
+          id="commentEmail" 
+          placeholder="Your Email" 
+          class="input"
+          required
+        />
+      </div>
+    )}
+
+    <textarea 
+      id="commentContent" 
+      rows="4" 
+      placeholder="Write your comment..." 
+      class="input mb-3"
+      required
+    ></textarea>
+
+    <button type="submit" class="btn btn-primary">
+      Post Comment
+    </button>
+    <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">
+      All comments are moderated before being published.
+    </p>
+  </form>
+
+  <!-- Comments List -->
+  <div id="commentsList" class="space-y-4">
+    {comments.length > 0 ? (
+      comments.map(comment => (
+        <div key={comment.id} class="p-4 bg-white dark:bg-slate-800 rounded-lg shadow">
+          <div class="flex items-center gap-3 mb-2">
+            {comment.user_avatar ? (
+              <img src={comment.user_avatar} alt={comment.user_name} class="w-10 h-10 rounded-full" />
+            ) : (
+              <div class="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center text-primary-600 dark:text-primary-400 font-bold">
+                {(comment.user_name || comment.name).charAt(0).toUpperCase()}
+              </div>
+            )}
+            <div>
+              <span class="font-medium text-slate-900 dark:text-white">
+                {comment.user_name || comment.name}
+              </span>
+              <span class="text-xs text-slate-500 dark:text-slate-400 block">
+                {new Date(comment.created_at * 1000).toLocaleDateString()}
+              </span>
+            </div>
+          </div>
+          <p class="text-slate-700 dark:text-slate-300">{comment.content}</p>
+          
+          <!-- Reply Button -->
+          <button 
+            onclick="showReplyForm(${comment.id})"
+            class="text-sm text-primary-600 dark:text-primary-400 hover:underline mt-2"
+          >
+            Reply
+          </button>
+
+          <!-- Reply Form -->
+          <div id="replyForm-${comment.id}" class="hidden mt-3 pl-4 border-l-2 border-slate-200 dark:border-slate-700">
+            <form class="reply-form" data-parent-id="${comment.id}">
+              {!user && (
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                  <input type="text" placeholder="Your Name" class="input" required />
+                  <input type="email" placeholder="Your Email" class="input" required />
+                </div>
+              )}
+              <textarea rows="3" placeholder="Write your reply..." class="input mb-3" required></textarea>
+              <button type="submit" class="btn btn-primary btn-sm">Post Reply</button>
+            </form>
+          </div>
+
+          <!-- Replies -->
+          {comment.replies && comment.replies.length > 0 && (
+            <div class="mt-3 pl-4 border-l-2 border-slate-200 dark:border-slate-700 space-y-3">
+              {comment.replies.map(reply => (
+                <div key={reply.id} class="p-3 bg-slate-50 dark:bg-slate-700 rounded-lg">
+                  <div class="flex items-center gap-3 mb-1">
+                    {reply.user_avatar ? (
+                      <img src={reply.user_avatar} alt={reply.user_name} class="w-8 h-8 rounded-full" />
+                    ) : (
+                      <div class="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center text-primary-600 dark:text-primary-400 font-bold text-sm">
+                        {(reply.user_name || reply.name).charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <div>
+                      <span class="font-medium text-sm text-slate-900 dark:text-white">
+                        {reply.user_name || reply.name}
+                      </span>
+                      <span class="text-xs text-slate-500 dark:text-slate-400 block">
+                        {new Date(reply.created_at * 1000).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+                  <p class="text-sm text-slate-700 dark:text-slate-300">{reply.content}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ))
+    ) : (
+      <p class="text-slate-500 dark:text-slate-400 text-center py-8">
+        No comments yet. Be the first to comment!
+      </p>
+    )}
+  </div>
+</div>
+
+<script>
+  const newsId = ${newsId};
+  const user = ${JSON.stringify(user || null)};
+
+  // Main comment form
+  document.getElementById('commentForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const content = form.querySelector('#commentContent').value;
+    const name = form.querySelector('#commentName')?.value || user?.name;
+    const email = form.querySelector('#commentEmail')?.value || user?.email;
+
+    if (!content.trim()) return;
+
+    const button = form.querySelector('button[type="submit"]');
+    const originalText = button.textContent;
+    button.textContent = 'Posting...';
+    button.disabled = true;
+
+    try {
+      const response = await fetch('/api/comments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          newsId,
+          content,
+          name,
+          email,
+          userId: user?.id || null
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert('Comment submitted for moderation.');
+        form.reset();
+        // Reload comments
+        location.reload();
+      } else {
+        alert(data.error || 'Failed to post comment');
+      }
+    } catch {
+      alert('Network error. Please try again.');
+    } finally {
+      button.textContent = originalText;
+      button.disabled = false;
+    }
+  });
+
+  // Reply forms
+  window.showReplyForm = (commentId) => {
+    const replyForm = document.getElementById(`replyForm-${commentId}`);
+    if (replyForm) {
+      replyForm.classList.toggle('hidden');
+    }
+  };
+
+  document.querySelectorAll('.reply-form').forEach(form => {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const parentId = parseInt(form.dataset.parentId);
+      const inputs = form.querySelectorAll('input, textarea');
+      let name = user?.name;
+      let email = user?.email;
+      let content = '';
+
+      inputs.forEach(input => {
+        if (input.type === 'text' && !user) name = input.value;
+        if (input.type === 'email' && !user) email = input.value;
+        if (input.tagName === 'TEXTAREA') content = input.value;
+      });
+
+      if (!content.trim()) return;
+
+      const button = form.querySelector('button[type="submit"]');
+      const originalText = button.textContent;
+      button.textContent = 'Posting...';
+      button.disabled = true;
+
+      try {
+        const response = await fetch('/api/comments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            newsId,
+            parentId,
+            content,
+            name,
+            email,
+            userId: user?.id || null
+          })
+        });
+
+        if (response.ok) {
+          alert('Reply submitted for moderation.');
+          location.reload();
+        } else {
+          const data = await response.json();
+          alert(data.error || 'Failed to post reply');
+        }
+      } catch {
+        alert('Network error. Please try again.');
+      } finally {
+        button.textContent = originalText;
+        button.disabled = false;
+      }
+    });
+  });
+</script>
