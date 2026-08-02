@@ -1,0 +1,129 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Card from '@/components/ui/Card.astro';
+import { createDb } from '@/db/index';
+
+const query = Astro.url.searchParams.get('q') || '';
+const page = parseInt(Astro.url.searchParams.get('page')) || 1;
+const limit = 12;
+const offset = (page - 1) * limit;
+
+let news = [];
+let total = 0;
+
+if (query.trim()) {
+  const db = createDb();
+  const searchTerm = `%${query}%`;
+  
+  const result = await db.execute({
+    sql: `
+      SELECT n.*, u.name as author, c.name as category, c.slug as category_slug
+      FROM news n
+      LEFT JOIN users u ON n.author_id = u.id
+      LEFT JOIN categories c ON n.category_id = c.id
+      WHERE n.status = 'published' 
+        AND n.publish_date <= strftime('%s', 'now')
+        AND (n.title LIKE ? OR n.content LIKE ? OR n.summary LIKE ?)
+      ORDER BY n.publish_date DESC
+      LIMIT ? OFFSET ?
+    `,
+    args: [searchTerm, searchTerm, searchTerm, limit, offset]
+  });
+  
+  news = result.results || [];
+  
+  const countResult = await db.execute({
+    sql: `
+      SELECT COUNT(*) as total
+      FROM news n
+      WHERE n.status = 'published' 
+        AND n.publish_date <= strftime('%s', 'now')
+        AND (n.title LIKE ? OR n.content LIKE ? OR n.summary LIKE ?)
+    `,
+    args: [searchTerm, searchTerm, searchTerm]
+  });
+  
+  total = countResult.results?.[0]?.total || 0;
+}
+
+const totalPages = Math.ceil(total / limit);
+const siteName = import.meta.env.SITE_NAME || 'News Portal';
+---
+
+<BaseLayout 
+  title={query ? `Search: ${query} - ${siteName}` : `Search - ${siteName}`}
+  description={`Search results for "${query}"`}
+  noIndex={true}
+>
+  <div class="container-custom py-6">
+    <!-- Search Form -->
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-4">Search</h1>
+      <form action="/search" method="GET" class="flex gap-2 max-w-2xl">
+        <input 
+          type="search" 
+          name="q" 
+          value={query}
+          placeholder="Search news, topics, authors..." 
+          class="flex-1 px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
+          autofocus
+        />
+        <button type="submit" class="btn btn-primary px-6">Search</button>
+      </form>
+    </div>
+
+    <!-- Results -->
+    {query.trim() ? (
+      <>
+        <div class="flex items-center justify-between mb-4">
+          <p class="text-slate-600 dark:text-slate-400">
+            Found <strong>{total}</strong> results for "<strong>{query}</strong>"
+          </p>
+        </div>
+
+        {news.length > 0 ? (
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {news.map(item => (
+              <Card
+                title={item.title}
+                image={item.featured_image}
+                href={`/${item.slug}`}
+                category={item.category}
+                categoryHref={`/category/${item.category_slug}`}
+                date={item.publish_date}
+                author={item.author}
+                summary={item.summary}
+                readingTime={item.reading_time}
+                views={item.views}
+              />
+            ))}
+          </div>
+        ) : (
+          <div class="text-center py-12">
+            <p class="text-slate-500 dark:text-slate-400">No results found for "<strong>{query}</strong>"</p>
+            <p class="text-sm text-slate-400 dark:text-slate-500 mt-2">Try adjusting your search terms</p>
+          </div>
+        )}
+
+        <!-- Pagination -->
+        {totalPages > 1 && (
+          <div class="flex items-center justify-center gap-2 mt-8">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+              <a 
+                key={p}
+                href={`/search?q=${encodeURIComponent(query)}&page=${p}`}
+                class={`px-3 py-1 rounded-md ${p === page ? 'bg-primary-600 text-white' : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700'}`}
+              >
+                {p}
+              </a>
+            ))}
+          </div>
+        )}
+      </>
+    ) : (
+      <div class="text-center py-12">
+        <p class="text-slate-500 dark:text-slate-400">Enter a search term to find news articles</p>
+      </div>
+    )}
+  </div>
+</BaseLayout>
