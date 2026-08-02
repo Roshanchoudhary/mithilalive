@@ -1,0 +1,66 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Terms of Service" description="Terms of service for using our platform">
+  <div class="container-custom py-12 max-w-4xl">
+    <h1 class="text-4xl font-bold text-slate-900 dark:text-white mb-6">Terms of Service</h1>
+    
+    <div class="prose dark:prose-invert max-w-none">
+      <p class="text-lg">Last updated: {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+
+      <h2>Acceptance of Terms</h2>
+      <p>
+        By using {import.meta.env.SITE_NAME || 'News Portal'}, you agree to these Terms of Service. If you do not agree, please do not use our services.
+      </p>
+
+      <h2>User Accounts</h2>
+      <ul>
+        <li>You must provide accurate and complete information when creating an account.</li>
+        <li>You are responsible for maintaining the security of your account credentials.</li>
+        <li>You must notify us immediately of any unauthorized use of your account.</li>
+      </ul>
+
+      <h2>User Content</h2>
+      <ul>
+        <li>You retain ownership of content you submit.</li>
+        <li>You grant us a license to display and distribute your content.</li>
+        <li>You are responsible for ensuring your content does not violate laws or third-party rights.</li>
+      </ul>
+
+      <h2>Prohibited Activities</h2>
+      <ul>
+        <li>Posting illegal or harmful content</li>
+        <li>Harassing or abusing other users</li>
+        <li>Attempting to gain unauthorized access to our systems</li>
+        <li>Using automated tools to scrape or extract data</li>
+      </ul>
+
+      <h2>Intellectual Property</h2>
+      <p>
+        All content on this site, including text, images, and logos, is our property or licensed to us. You may not use our content without permission.
+      </p>
+
+      <h2>Disclaimer</h2>
+      <p>
+        Our content is provided "as is" without warranties of any kind. We are not responsible for the accuracy or completeness of information on external sites we link to.
+      </p>
+
+      <h2>Limitation of Liability</h2>
+      <p>
+        We are not liable for any damages arising from your use of our services, to the extent permitted by law.
+      </p>
+
+      <h2>Changes to Terms</h2>
+      <p>
+        We may update these terms from time to time. Continued use of our services constitutes acceptance of the updated terms.
+      </p>
+
+      <h2>Contact</h2>
+      <p>
+        Questions about these terms? Contact us at{' '}
+        <a href="mailto:legal@example.com">legal@example.com</a>
+      </p>
+    </div>
+  </div>
+</BaseLayout>
