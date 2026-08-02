@@ -1,0 +1,190 @@
+---
+import AdminLayout from '@/layouts/AdminLayout.astro';
+import { createDb } from '@/db/index';
+import { getSession } from '@/middleware/auth';
+
+const user = await getSession(Astro.request);
+if (!user || !['super_admin', 'admin'].includes(user.role)) {
+  return Astro.redirect('/admin/login');
+}
+
+const db = createDb();
+
+// Get statistics
+const statsResult = await db.execute({
+  sql: `
+    SELECT 
+      (SELECT COUNT(*) FROM news) as total_news,
+      (SELECT COUNT(*) FROM news WHERE status = 'published') as published_news,
+      (SELECT COUNT(*) FROM news WHERE status = 'pending') as pending_news,
+      (SELECT COUNT(*) FROM users) as total_users,
+      (SELECT COUNT(*) FROM comments WHERE status = 'pending') as pending_comments,
+      (SELECT COUNT(*) FROM categories) as total_categories
+  `
+});
+
+const stats = statsResult.results?.[0] || {
+  total_news: 0,
+  published_news: 0,
+  pending_news: 0,
+  total_users: 0,
+  pending_comments: 0,
+  total_categories: 0
+};
+
+// Get recent news
+const recentNews = await db.execute({
+  sql: `
+    SELECT n.*, u.name as author
+    FROM news n
+    LEFT JOIN users u ON n.author_id = u.id
+    ORDER BY n.created_at DESC
+    LIMIT 5
+  `
+});
+
+// Get recent comments
+const recentComments = await db.execute({
+  sql: `
+    SELECT c.*, n.title as news_title, n.slug as news_slug
+    FROM comments c
+    LEFT JOIN news n ON c.news_id = n.id
+    ORDER BY c.created_at DESC
+    LIMIT 5
+  `
+});
+---
+
+<AdminLayout title="Dashboard">
+  <div class="space-y-6">
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-slate-500 dark:text-slate-400">Total News</p>
+            <p class="text-2xl font-bold text-slate-900 dark:text-white">{stats.total_news}</p>
+          </div>
+          <span class="text-3xl">📰</span>
+        </div>
+        <div class="mt-2 text-sm">
+          <span class="text-green-600 dark:text-green-400">{stats.published_news} published</span>
+          <span class="text-yellow-600 dark:text-yellow-400 ml-2">{stats.pending_news} pending</span>
+        </div>
+      </div>
+
+      <div class="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-slate-500 dark:text-slate-400">Users</p>
+            <p class="text-2xl font-bold text-slate-900 dark:text-white">{stats.total_users}</p>
+          </div>
+          <span class="text-3xl">👥</span>
+        </div>
+      </div>
+
+      <div class="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-slate-500 dark:text-slate-400">Pending Comments</p>
+            <p class="text-2xl font-bold text-slate-900 dark:text-white">{stats.pending_comments}</p>
+          </div>
+          <span class="text-3xl">💬</span>
+        </div>
+        {stats.pending_comments > 0 && (
+          <a href="/admin/comments" class="text-sm text-primary-600 hover:underline mt-2 inline-block">
+            Review comments →
+          </a>
+        )}
+      </div>
+
+      <div class="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-slate-500 dark:text-slate-400">Categories</p>
+            <p class="text-2xl font-bold text-slate-900 dark:text-white">{stats.total_categories}</p>
+          </div>
+          <span class="text-3xl">📁</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
+      <h3 class="font-semibold text-lg mb-4 text-slate-900 dark:text-white">Quick Actions</h3>
+      <div class="flex flex-wrap gap-3">
+        <a href="/admin/news/create" class="btn btn-primary">✏️ Create News</a>
+        <a href="/admin/users/create" class="btn btn-secondary">👤 Add User</a>
+        <a href="/admin/categories/create" class="btn btn-secondary">📁 Add Category</a>
+        <a href="/admin/media" class="btn btn-secondary">🖼️ Media Library</a>
+        <a href="/admin/settings" class="btn btn-secondary">⚙️ Settings</a>
+      </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Recent News -->
+      <div class="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
+        <h3 class="font-semibold text-lg mb-4 text-slate-900 dark:text-white">Recent News</h3>
+        <div class="space-y-3">
+          {recentNews.results && recentNews.results.length > 0 ? (
+            recentNews.results.map(item => (
+              <div key={item.id} class="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-3">
+                <div class="flex-1 min-w-0">
+                  <a href={`/admin/news/${item.id}`} class="text-sm font-medium hover:text-primary-600">
+                    {item.title}
+                  </a>
+                  <p class="text-xs text-slate-500 dark:text-slate-400">
+                    {item.author || 'Unknown'} • {new Date(item.created_at * 1000).toLocaleDateString()}
+                  </p>
+                </div>
+                <span class={`badge ${
+                  item.status === 'published' ? 'badge-success' :
+                  item.status === 'pending' ? 'badge-warning' :
+                  item.status === 'rejected' ? 'badge-danger' :
+                  'badge-info'
+                }`}>
+                  {item.status}
+                </span>
+              </div>
+            ))
+          ) : (
+            <p class="text-slate-500 dark:text-slate-400 text-sm">No news yet</p>
+          )}
+        </div>
+        <a href="/admin/news" class="text-sm text-primary-600 hover:underline mt-4 inline-block">View all →</a>
+      </div>
+
+      <!-- Recent Comments -->
+      <div class="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
+        <h3 class="font-semibold text-lg mb-4 text-slate-900 dark:text-white">Recent Comments</h3>
+        <div class="space-y-3">
+          {recentComments.results && recentComments.results.length > 0 ? (
+            recentComments.results.map(item => (
+              <div key={item.id} class="border-b border-slate-100 dark:border-slate-700 pb-3">
+                <p class="text-sm text-slate-600 dark:text-slate-300 line-clamp-2">
+                  "{item.content}"
+                </p>
+                <div class="flex items-center justify-between mt-1">
+                  <span class="text-xs text-slate-500 dark:text-slate-400">
+                    {item.name} on <a href={`/${item.news_slug}`} class="hover:underline">{item.news_title}</a>
+                  </span>
+                  <span class={`badge ${
+                    item.status === 'approved' ? 'badge-success' :
+                    item.status === 'pending' ? 'badge-warning' :
+                    'badge-danger'
+                  }`}>
+                    {item.status}
+                  </span>
+                </div>
+              </div>
+            ))
+          ) : (
+            <p class="text-slate-500 dark:text-slate-400 text-sm">No comments yet</p>
+          )}
+        </div>
+        <a href="/admin/comments" class="text-sm text-primary-600 hover:underline mt-4 inline-block">View all →</a>
+      </div>
+    </div>
+  </div>
+</AdminLayout>
