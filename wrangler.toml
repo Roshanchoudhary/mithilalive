@@ -4,8 +4,8 @@ compatibility_date = "2024-04-05"
 
 [[d1_databases]]
 binding = "DB"
-database_name = "news_db"
-database_id = "your-d1-database-id"
+database_name = "3aa5471b-a6d4-4215-bee7-fdb553afc8d0"
+database_id = "3aa5471b-a6d4-4215-bee7-fdb553afc8d0"
 
 [[kv_namespaces]]
 binding = "KV"
@@ -23,7 +23,7 @@ ADMIN_EMAIL = "admin@example.com"
 ADMIN_PASSWORD = "admin123"
 SITE_NAME = "News Portal"
 SITE_URL = "https://your-domain.com"
-CLOUDFLARE_ACCOUNT_ID = "your-account-id"
+CLOUDFLARE_ACCOUNT_ID = "996a34add1f39a0b93404d7d91086d21"
 
 [env.production]
 vars = { API_URL = "https://your-domain.com/api", NODE_ENV = "production" }
