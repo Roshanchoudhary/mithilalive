@@ -1,0 +1,133 @@
+---
+import { getSession } from '@/middleware/auth';
+
+const user = await getSession(Astro.request);
+if (!user || !['super_admin', 'admin'].includes(user.role)) {
+  return Astro.redirect('/admin/login');
+}
+
+export interface Props {
+  title?: string;
+}
+
+const { title = 'Dashboard' } = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title} - Admin - {import.meta.env.SITE_NAME || 'News Portal'}</title>
+    <link rel="stylesheet" href="/styles/globals.css" />
+  </head>
+  <body class="h-full bg-slate-50 dark:bg-slate-900">
+    <div class="flex h-full">
+      <!-- Sidebar -->
+      <aside class="w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex-shrink-0 hidden md:flex md:flex-col">
+        <div class="p-4 border-b border-slate-200 dark:border-slate-700">
+          <h2 class="text-xl font-bold text-slate-900 dark:text-white">
+            {import.meta.env.SITE_NAME || 'News Portal'}
+          </h2>
+          <p class="text-sm text-slate-500 dark:text-slate-400">Admin Panel</p>
+        </div>
+        <nav class="flex-1 overflow-y-auto p-4 space-y-1">
+          <a href="/admin" class="flex items-center px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+            <span class="mr-3">📊</span> Dashboard
+          </a>
+          <a href="/admin/news" class="flex items-center px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+            <span class="mr-3">📰</span> News
+          </a>
+          <a href="/admin/categories" class="flex items-center px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+            <span class="mr-3">📁</span> Categories
+          </a>
+          <a href="/admin/tags" class="flex items-center px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+            <span class="mr-3">🏷️</span> Tags
+          </a>
+          <a href="/admin/users" class="flex items-center px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+            <span class="mr-3">👥</span> Users
+          </a>
+          <a href="/admin/comments" class="flex items-center px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+            <span class="mr-3">💬</span> Comments
+          </a>
+          <a href="/admin/media" class="flex items-center px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+            <span class="mr-3">🖼️</span> Media
+          </a>
+          <a href="/admin/ads" class="flex items-center px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+            <span class="mr-3">📢</span> Advertisements
+          </a>
+          <a href="/admin/settings" class="flex items-center px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+            <span class="mr-3">⚙️</span> Settings
+          </a>
+          <a href="/admin/menus" class="flex items-center px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+            <span class="mr-3">📋</span> Menus
+          </a>
+          <hr class="my-2 border-slate-200 dark:border-slate-700" />
+          <a href="/" class="flex items-center px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+            <span class="mr-3">🏠</span> View Site
+          </a>
+          <a href="/api/auth/logout" class="flex items-center px-3 py-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 transition-colors">
+            <span class="mr-3">🚪</span> Logout
+          </a>
+        </nav>
+      </aside>
+
+      <!-- Main Content -->
+      <div class="flex-1 flex flex-col overflow-hidden">
+        <header class="bg-white dark:bg-slate-800 shadow-sm border-b border-slate-200 dark:border-slate-700">
+          <div class="flex items-center justify-between px-6 py-3">
+            <div class="flex items-center space-x-4">
+              <button id="mobileSidebarToggle" class="md:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+              <h1 class="text-xl font-semibold text-slate-900 dark:text-slate-100">{title}</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+              <button id="darkModeToggle" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
+                <span class="dark:hidden">🌙</span>
+                <span class="hidden dark:inline">☀️</span>
+              </button>
+              <div class="flex items-center space-x-3">
+                <span class="text-sm text-slate-600 dark:text-slate-300">{user.name}</span>
+                <span class="text-xs px-2 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-full">
+                  {user.role.replace('_', ' ')}
+                </span>
+              </div>
+            </div>
+          </div>
+        </header>
+        <main class="flex-1 overflow-y-auto p-6">
+          <slot />
+        </main>
+      </div>
+    </div>
+
+    <script>
+      // Dark mode toggle
+      document.getElementById('darkModeToggle')?.addEventListener('click', () => {
+        document.documentElement.classList.toggle('dark');
+        localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+      });
+
+      // Mobile sidebar toggle
+      document.getElementById('mobileSidebarToggle')?.addEventListener('click', () => {
+        const sidebar = document.querySelector('aside');
+        sidebar?.classList.toggle('hidden');
+      });
+
+      // Close sidebar on outside click (mobile)
+      document.addEventListener('click', (e) => {
+        const sidebar = document.querySelector('aside');
+        const toggle = document.getElementById('mobileSidebarToggle');
+        if (window.innerWidth < 768 && sidebar && !sidebar.classList.contains('hidden')) {
+          const isClickInside = sidebar.contains(e.target) || toggle?.contains(e.target);
+          if (!isClickInside) {
+            sidebar.classList.add('hidden');
+          }
+        }
+      });
+    </script>
+  </body>
+</html>
