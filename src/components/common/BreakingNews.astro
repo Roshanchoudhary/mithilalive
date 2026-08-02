@@ -1,0 +1,71 @@
+---
+import { getBreakingNews } from '@/utils/helpers';
+import { formatTimeAgo } from '@/utils/helpers';
+
+const breakingNews = await getBreakingNews(5);
+---
+
+<div class="bg-red-600 dark:bg-red-700 text-white overflow-hidden" id="breakingNews">
+  <div class="container-custom">
+    <div class="flex items-center py-2">
+      <span class="font-bold text-sm px-3 py-1 bg-red-700 dark:bg-red-800 rounded-full mr-4 flex-shrink-0">
+        BREAKING
+      </span>
+      <div class="relative overflow-hidden flex-1">
+        <div class="whitespace-nowrap animate-marquee" id="breakingTicker">
+          {breakingNews && breakingNews.length > 0 ? (
+            breakingNews.map(news => (
+              <a 
+                href={`/${news.slug}`} 
+                class="inline-block px-4 hover:underline"
+              >
+                {news.title} • {formatTimeAgo(news.publish_date * 1000)}
+              </a>
+            ))
+          ) : (
+            <span class="inline-block px-4">No breaking news at this moment</span>
+          )}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  @keyframes marquee {
+    0% { transform: translateX(100%); }
+    100% { transform: translateX(-100%); }
+  }
+  
+  .animate-marquee {
+    animation: marquee 20s linear infinite;
+  }
+  
+  .animate-marquee:hover {
+    animation-play-state: paused;
+  }
+</style>
+
+<script>
+  // Refresh breaking news every 5 minutes
+  async function refreshBreakingNews() {
+    try {
+      const response = await fetch('/api/news?breaking=true&limit=5');
+      const data = await response.json();
+      const ticker = document.getElementById('breakingTicker');
+      
+      if (data.data && data.data.length > 0) {
+        const items = data.data.map(item => 
+          `<a href="/${item.slug}" class="inline-block px-4 hover:underline">${item.title}</a>`
+        );
+        ticker.innerHTML = items.join('');
+      } else {
+        ticker.innerHTML = '<span class="inline-block px-4">No breaking news at this moment</span>';
+      }
+    } catch {
+      // Keep current content
+    }
+  }
+  
+  setInterval(refreshBreakingNews, 300000);
+</script>
