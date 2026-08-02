@@ -1,0 +1,135 @@
+---
+
+<footer class="bg-slate-900 text-slate-300">
+  <div class="container-custom py-12">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+      <!-- About -->
+      <div>
+        <h3 class="text-white font-semibold text-lg mb-4">{import.meta.env.SITE_NAME || 'News Portal'}</h3>
+        <p class="text-sm text-slate-400">
+          Your trusted source for news, updates, and insights from around the world.
+        </p>
+        <div class="flex space-x-4 mt-4">
+          <a href="#" aria-label="Facebook" class="hover:text-white transition-colors">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+            </svg>
+          </a>
+          <a href="#" aria-label="Twitter" class="hover:text-white transition-colors">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+            </svg>
+          </a>
+          <a href="#" aria-label="YouTube" class="hover:text-white transition-colors">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+            </svg>
+          </a>
+          <a href="#" aria-label="RSS" class="hover:text-white transition-colors">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M19.199 24C19.199 13.467 10.533 4.8 0 4.8V0c13.165 0 24 10.835 24 24h-4.801zM3.291 17.415c1.814 0 3.293 1.479 3.293 3.295 0 1.813-1.485 3.29-3.301 3.29C1.479 24 0 22.526 0 20.71s1.475-3.294 3.291-3.295zM15.909 24h-4.665c0-6.169-5.075-11.245-11.244-11.245V8.09c8.727 0 15.909 7.184 15.909 15.91z"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+
+      <!-- Quick Links -->
+      <div>
+        <h3 class="text-white font-semibold text-lg mb-4">Quick Links</h3>
+        <ul class="space-y-2 text-sm">
+          <li><a href="/about" class="hover:text-white transition-colors">About Us</a></li>
+          <li><a href="/contact" class="hover:text-white transition-colors">Contact</a></li>
+          <li><a href="/privacy" class="hover:text-white transition-colors">Privacy Policy</a></li>
+          <li><a href="/terms" class="hover:text-white transition-colors">Terms of Service</a></li>
+          <li><a href="/advertise" class="hover:text-white transition-colors">Advertise</a></li>
+          <li><a href="/sitemap.xml" class="hover:text-white transition-colors">Sitemap</a></li>
+        </ul>
+      </div>
+
+      <!-- Categories -->
+      <div>
+        <h3 class="text-white font-semibold text-lg mb-4">Categories</h3>
+        <ul class="space-y-2 text-sm" id="footerCategories">
+          <li class="text-slate-400">Loading...</li>
+        </ul>
+      </div>
+
+      <!-- Newsletter -->
+      <div>
+        <h3 class="text-white font-semibold text-lg mb-4">Newsletter</h3>
+        <p class="text-sm text-slate-400 mb-4">
+          Subscribe to our newsletter for the latest updates.
+        </p>
+        <form id="newsletterForm" class="space-y-3">
+          <input 
+            type="email" 
+            placeholder="Your email address" 
+            class="w-full px-3 py-2 rounded-md bg-slate-800 border border-slate-700 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
+            required
+          />
+          <button type="submit" class="w-full btn btn-primary">
+            Subscribe
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Copyright -->
+    <div class="border-t border-slate-800 mt-8 pt-8 text-center text-sm text-slate-400">
+      <p>&copy; {new Date().getFullYear()} {import.meta.env.SITE_NAME || 'News Portal'}. All rights reserved.</p>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Load categories for footer
+  async function loadCategories() {
+    try {
+      const response = await fetch('/api/categories');
+      const data = await response.json();
+      const container = document.getElementById('footerCategories');
+      if (container && data.data && data.data.length > 0) {
+        container.innerHTML = data.data.slice(0, 6).map(cat => 
+          `<li><a href="/category/${cat.slug}" class="hover:text-white transition-colors">${cat.name}</a></li>`
+        ).join('');
+      } else {
+        container.innerHTML = '<li class="text-slate-400">No categories</li>';
+      }
+    } catch {
+      // Keep default loading state
+    }
+  }
+  loadCategories();
+
+  // Newsletter subscription
+  const form = document.getElementById('newsletterForm');
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = e.target.querySelector('input[type="email"]').value;
+    const button = e.target.querySelector('button');
+    const originalText = button.textContent;
+    
+    try {
+      button.textContent = 'Subscribing...';
+      button.disabled = true;
+      
+      const response = await fetch('/api/newsletter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      
+      if (response.ok) {
+        alert('Thank you for subscribing!');
+        e.target.reset();
+      } else {
+        throw new Error('Subscription failed');
+      }
+    } catch {
+      alert('Something went wrong. Please try again.');
+    } finally {
+      button.textContent = originalText;
+      button.disabled = false;
+    }
+  });
+</script>
