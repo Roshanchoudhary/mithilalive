@@ -79,7 +79,7 @@ export const POST: APIRoute = async ({ request }) => {
       permissions
     };
 
-    const token = generateToken(payload);
+    const token = await generateToken(payload);
 
     // Update last login
     await db.execute({
