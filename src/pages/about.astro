@@ -1,0 +1,46 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { generateOrganizationSchema } from '@/utils/seo';
+
+const siteName = import.meta.env.SITE_NAME || 'News Portal';
+---
+
+<BaseLayout 
+  title={`About Us - ${siteName}`}
+  description={`Learn more about ${siteName}, your trusted source for news and updates`}
+  schema={generateOrganizationSchema()}
+>
+  <div class="container-custom py-12 max-w-4xl">
+    <h1 class="text-4xl font-bold text-slate-900 dark:text-white mb-6">About Us</h1>
+    
+    <div class="prose dark:prose-invert max-w-none">
+      <p class="text-lg">
+        Welcome to <strong>{siteName}</strong>, your trusted source for news, updates, and insights from around the world.
+      </p>
+
+      <h2>Our Mission</h2>
+      <p>
+        Our mission is to deliver accurate, timely, and unbiased news coverage that empowers our readers to make informed decisions. We believe in the power of journalism to create positive change in society.
+      </p>
+
+      <h2>Our Values</h2>
+      <ul>
+        <li><strong>Accuracy:</strong> We fact-check every story before publication.</li>
+        <li><strong>Integrity:</strong> We maintain high ethical standards in our reporting.</li>
+        <li><strong>Independence:</strong> We are not influenced by political or commercial interests.</li>
+        <li><strong>Innovation:</strong> We embrace new technologies to better serve our audience.</li>
+      </ul>
+
+      <h2>Our Team</h2>
+      <p>
+        {siteName} is powered by a dedicated team of journalists, editors, and technical professionals who are passionate about delivering quality content to our readers.
+      </p>
+
+      <h2>Contact Us</h2>
+      <p>
+        Have questions or feedback? We'd love to hear from you. Reach out to us at{' '}
+        <a href="mailto:contact@example.com">contact@example.com</a>
+      </p>
+    </div>
+  </div>
+</BaseLayout>
