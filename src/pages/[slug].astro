@@ -1,0 +1,147 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { getNewsBySlug, getRelatedNews, getComments } from '@/utils/helpers';
+import { formatDate, calculateReadingTime } from '@/utils/helpers';
+import { generateArticleSchema, generateBreadcrumbSchema } from '@/utils/seo';
+
+export async function getStaticPaths() {
+  // Dynamic routing - handled at runtime
+  return [];
+}
+
+const { slug } = Astro.params;
+const news = await getNewsBySlug(slug);
+if (!news) {
+  return Astro.redirect('/404');
+}
+
+const relatedNews = await getRelatedNews(news.id);
+const comments = await getComments(news.id);
+
+const articleSchema = generateArticleSchema({
+  title: news.title,
+  description: news.summary || news.title,
+  image: news.featured_image || '/images/og-default.jpg',
+  url: `/${news.slug}`,
+  author: news.author,
+  publishedTime: new Date(news.publish_date * 1000).toISOString(),
+  modifiedTime: new Date(news.updated_at * 1000).toISOString(),
+  category: news.category,
+  tags: news.tags?.map(t => t.name)
+});
+
+const breadcrumbSchema = generateBreadcrumbSchema([
+  { name: 'Home', url: '/' },
+  { name: news.category || 'News', url: `/category/${news.category_slug || 'news'}` },
+  { name: news.title, url: `/${news.slug}` }
+]);
+---
+
+<BaseLayout 
+  title={news.seo_title || news.title}
+  description={news.seo_description || news.summary}
+  image={news.featured_image}
+  canonical={`/${news.slug}`}
+  ogType="article"
+  schema={[articleSchema, breadcrumbSchema]}
+>
+  <article class="container-custom py-6 max-w-4xl mx-auto">
+    <!-- Category -->
+    {news.category && (
+      <a 
+        href={`/category/${news.category_slug}`} 
+        class="text-primary-600 dark:text-primary-400 font-semibold text-sm uppercase tracking-wider hover:underline"
+      >
+        {news.category}
+      </a>
+    )}
+
+    <!-- Title -->
+    <h1 class="text-3xl md:text-4xl lg:text-5xl font-bold mt-2 text-slate-900 dark:text-white">
+      {news.title}
+    </h1>
+
+    <!-- Meta -->
+    <div class="flex flex-wrap items-center gap-4 mt-4 text-sm text-slate-600 dark:text-slate-400">
+      <div class="flex items-center gap-2">
+        <span class="font-medium text-slate-900 dark:text-slate-200">{news.author}</span>
+      </div>
+      <span>•</span>
+      <time dateTime={news.publish_date}>
+        {formatDate(news.publish_date * 1000)}
+      </time>
+      <span>•</span>
+      <span>{news.reading_time || calculateReadingTime(news.content)} min read</span>
+      <span>•</span>
+      <span>{news.views} views</span>
+    </div>
+
+    <!-- Featured Image -->
+    {news.featured_image && (
+      <figure class="mt-6">
+        <img 
+          src={news.featured_image} 
+          alt={news.title}
+          class="w-full rounded-lg shadow-lg"
+          loading="eager"
+          width="1200"
+          height="630"
+        />
+        {news.image_caption && (
+          <figcaption class="text-sm text-slate-500 dark:text-slate-400 mt-2 text-center">
+            {news.image_caption}
+          </figcaption>
+        )}
+      </figure>
+    )}
+
+    <!-- Content -->
+    <div class="prose prose-lg dark:prose-invert max-w-none mt-8">
+      {news.content}
+    </div>
+
+    <!-- Tags -->
+    {news.tags && news.tags.length > 0 && (
+      <div class="flex flex-wrap gap-2 mt-8">
+        {news.tags.map(tag => (
+          <a 
+            key={tag.id} 
+            href={`/tag/${tag.slug}`}
+            class="px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-full text-sm hover:bg-primary-100 dark:hover:bg-primary-900 transition-colors"
+          >
+            #{tag.name}
+          </a>
+        ))}
+      </div>
+    )}
+
+    <!-- Related News -->
+    {relatedNews && relatedNews.length > 0 && (
+      <section class="mt-12 border-t border-slate-200 dark:border-slate-700 pt-8">
+        <h3 class="text-2xl font-bold mb-4">Related News</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {relatedNews.slice(0, 3).map(item => (
+            <a href={`/${item.slug}`} class="card group overflow-hidden">
+              {item.featured_image && (
+                <img 
+                  src={item.featured_image} 
+                  alt={item.title}
+                  class="w-full h-40 object-cover group-hover:scale-105 transition-transform duration-300"
+                  loading="lazy"
+                />
+              )}
+              <div class="p-4">
+                <h4 class="font-semibold group-hover:text-primary-600 transition-colors line-clamp-2">
+                  {item.title}
+                </h4>
+                <p class="text-sm text-slate-600 dark:text-slate-400 mt-1 line-clamp-2">
+                  {item.summary}
+                </p>
+              </div>
+            </a>
+          ))}
+        </div>
+      </section>
+    )}
+  </article>
+</BaseLayout>
