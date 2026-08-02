@@ -1,0 +1,184 @@
+---
+import AdminLayout from '@/layouts/AdminLayout.astro';
+import { getSession } from '@/middleware/auth';
+import { createDb } from '@/db/index';
+
+const user = await getSession(Astro.request);
+if (!user || !['super_admin', 'admin'].includes(user.role)) {
+  return Astro.redirect('/admin/login');
+}
+
+const db = createDb();
+
+// Get categories for dropdown
+const categories = await db.execute({
+  sql: `SELECT id, name FROM categories WHERE is_active = 1 ORDER BY name ASC`
+});
+---
+
+<AdminLayout title="Create News">
+  <div class="max-w-4xl mx-auto">
+    <div class="flex items-center justify-between mb-6">
+      <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Create News Article</h1>
+      <a href="/admin/news" class="btn btn-secondary">← Back to News</a>
+    </div>
+
+    <form id="newsForm" class="bg-white dark:bg-slate-800 rounded-lg shadow p-6 space-y-6">
+      <!-- Title -->
+      <div>
+        <label for="title" class="label">Title *</label>
+        <input type="text" id="title" name="title" class="input" placeholder="Enter article title" required />
+      </div>
+
+      <!-- Slug -->
+      <div>
+        <label for="slug" class="label">Slug</label>
+        <input type="text" id="slug" name="slug" class="input" placeholder="auto-generated from title" />
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Leave empty to auto-generate from title</p>
+      </div>
+
+      <!-- Category -->
+      <div>
+        <label for="category" class="label">Category</label>
+        <select id="category" name="category" class="input">
+          <option value="">Select Category</option>
+          {categories.results?.map(cat => (
+            <option key={cat.id} value={cat.id}>{cat.name}</option>
+          ))}
+        </select>
+      </div>
+
+      <!-- Summary -->
+      <div>
+        <label for="summary" class="label">Summary</label>
+        <textarea id="summary" name="summary" rows="3" class="input" placeholder="Brief summary of the article"></textarea>
+      </div>
+
+      <!-- Content -->
+      <div>
+        <label for="content" class="label">Content *</label>
+        <textarea id="content" name="content" rows="15" class="input font-mono text-sm" placeholder="Write your article content here..." required></textarea>
+      </div>
+
+      <!-- Featured Image -->
+      <div>
+        <label for="featuredImage" class="label">Featured Image URL</label>
+        <input type="url" id="featuredImage" name="featuredImage" class="input" placeholder="https://example.com/image.jpg" />
+      </div>
+
+      <!-- Tags -->
+      <div>
+        <label for="tags" class="label">Tags</label>
+        <input type="text" id="tags" name="tags" class="input" placeholder="tag1, tag2, tag3" />
+      </div>
+
+      <!-- Status -->
+      <div>
+        <label for="status" class="label">Status</label>
+        <select id="status" name="status" class="input">
+          <option value="draft">Draft</option>
+          <option value="pending">Pending Review</option>
+          <option value="published">Published</option>
+        </select>
+      </div>
+
+      <!-- Featured/Sticky/Etc -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <label class="flex items-center space-x-2">
+          <input type="checkbox" name="isFeatured" value="1" />
+          <span class="text-sm">Featured</span>
+        </label>
+        <label class="flex items-center space-x-2">
+          <input type="checkbox" name="isBreaking" value="1" />
+          <span class="text-sm">Breaking</span>
+        </label>
+        <label class="flex items-center space-x-2">
+          <input type="checkbox" name="isSticky" value="1" />
+          <span class="text-sm">Sticky</span>
+        </label>
+        <label class="flex items-center space-x-2">
+          <input type="checkbox" name="isTrending" value="1" />
+          <span class="text-sm">Trending</span>
+        </label>
+      </div>
+
+      <!-- SEO Fields -->
+      <details class="border border-slate-200 dark:border-slate-700 rounded-lg p-4">
+        <summary class="cursor-pointer font-medium text-slate-700 dark:text-slate-300">SEO Settings (Optional)</summary>
+        <div class="mt-4 space-y-4">
+          <div>
+            <label for="seoTitle" class="label">SEO Title</label>
+            <input type="text" id="seoTitle" name="seoTitle" class="input" placeholder="SEO optimized title" />
+          </div>
+          <div>
+            <label for="seoDescription" class="label">SEO Description</label>
+            <textarea id="seoDescription" name="seoDescription" rows="2" class="input" placeholder="SEO meta description"></textarea>
+          </div>
+          <div>
+            <label for="keywords" class="label">Keywords</label>
+            <input type="text" id="keywords" name="keywords" class="input" placeholder="keyword1, keyword2, keyword3" />
+          </div>
+        </div>
+      </details>
+
+      <!-- Submit -->
+      <div class="flex gap-3">
+        <button type="submit" class="btn btn-primary">Create Article</button>
+        <button type="button" onclick="window.location.href='/admin/news'" class="btn btn-secondary">Cancel</button>
+      </div>
+    </form>
+  </div>
+</AdminLayout>
+
+<script>
+  document.getElementById('newsForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const formData = new FormData(form);
+
+    const data = {
+      title: formData.get('title'),
+      slug: formData.get('slug') || undefined,
+      category_id: parseInt(formData.get('category')) || null,
+      summary: formData.get('summary'),
+      content: formData.get('content'),
+      featured_image: formData.get('featuredImage'),
+      tags: formData.get('tags')?.split(',').map(t => t.trim()).filter(Boolean) || [],
+      status: formData.get('status'),
+      is_featured: formData.get('isFeatured') ? 1 : 0,
+      is_breaking: formData.get('isBreaking') ? 1 : 0,
+      is_sticky: formData.get('isSticky') ? 1 : 0,
+      is_trending: formData.get('isTrending') ? 1 : 0,
+      seo_title: formData.get('seoTitle'),
+      seo_description: formData.get('seoDescription'),
+      keywords: formData.get('keywords')
+    };
+
+    const button = form.querySelector('button[type="submit"]');
+    const originalText = button.textContent;
+    button.textContent = 'Creating...';
+    button.disabled = true;
+
+    try {
+      const response = await fetch('/api/news', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        alert('Article created successfully!');
+        window.location.href = '/admin/news';
+      } else {
+        alert(result.error || 'Failed to create article');
+      }
+    } catch {
+      alert('Network error. Please try again.');
+    } finally {
+      button.textContent = originalText;
+      button.disabled = false;
+    }
+  });
+</script>
