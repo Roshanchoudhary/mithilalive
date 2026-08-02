@@ -4,7 +4,7 @@ compatibility_date = "2024-04-05"
 
 [[d1_databases]]
 binding = "DB"
-database_name = "3aa5471b-a6d4-4215-bee7-fdb553afc8d0"
+database_name = "mithilalive"
 database_id = "3aa5471b-a6d4-4215-bee7-fdb553afc8d0"
 
 [[kv_namespaces]]
