@@ -1,11 +1,14 @@
-import { createHash, randomBytes } from 'crypto';
-
 export function generateToken(length: number = 32): string {
-  return randomBytes(length).toString('hex');
+  const array = new Uint8Array(length);
+  crypto.getRandomValues(array);
+  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
 }
 
-export function hashData(data: string): string {
-  return createHash('sha256').update(data).digest('hex');
+export async function hashData(data: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(data));
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(byte => byte.toString(16).padStart(2, '0')).join('');
 }
 
 export function sanitizeInput(input: string): string {
@@ -44,7 +47,11 @@ export function generateSlug(text: string): string {
 }
 
 export function generateRandomString(length: number = 10): string {
-  return randomBytes(length).toString('base64').replace(/[^a-zA-Z0-9]/g, '');
+  const array = new Uint8Array(length);
+  crypto.getRandomValues(array);
+  return Array.from(array, byte => 
+    'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[byte % 62]
+  ).join('');
 }
 
 export function sanitizeHtml(html: string): string {
