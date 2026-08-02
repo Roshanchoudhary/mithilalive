@@ -1,11 +1,10 @@
-import jwt from 'jsonwebtoken';
+import { SignJWT, jwtVerify } from 'jose';
 import { sha256 } from '@noble/hashes/sha256';
 import { randomBytes } from '@noble/hashes/utils';
 import { parse, serialize } from 'cookie';
 
 const JWT_SECRET = import.meta.env.JWT_SECRET || 'default-secret-change-this';
 const JWT_EXPIRY = import.meta.env.JWT_EXPIRY || '7d';
-const BCRYPT_ROUNDS = parseInt(import.meta.env.BCRYPT_ROUNDS || '10');
 
 export interface JWTPayload {
   id: number;
@@ -15,7 +14,6 @@ export interface JWTPayload {
   permissions: string[];
 }
 
-// Simple password hashing (use proper bcrypt in production)
 export function hashPassword(password: string): string {
   const hash = sha256(new TextEncoder().encode(password));
   return Array.from(hash, byte => byte.toString(16).padStart(2, '0')).join('');
@@ -25,13 +23,20 @@ export function verifyPassword(password: string, hash: string): boolean {
   return hashPassword(password) === hash;
 }
 
-export function generateToken(payload: JWTPayload): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRY });
+export async function generateToken(payload: JWTPayload): Promise<string> {
+  const secret = new TextEncoder().encode(JWT_SECRET);
+  return await new SignJWT(payload as any)
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime(JWT_EXPIRY)
+    .sign(secret);
 }
 
-export function verifyToken(token: string): JWTPayload | null {
+export async function verifyToken(token: string): Promise<JWTPayload | null> {
   try {
-    return jwt.verify(token, JWT_SECRET) as JWTPayload;
+    const secret = new TextEncoder().encode(JWT_SECRET);
+    const { payload } = await jwtVerify(token, secret);
+    return payload as unknown as JWTPayload;
   } catch {
     return null;
   }
