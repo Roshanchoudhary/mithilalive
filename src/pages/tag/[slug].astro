@@ -1,0 +1,90 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Card from '@/components/ui/Card.astro';
+import { createDb } from '@/db/index';
+
+export async function getStaticPaths() {
+  return [];
+}
+
+const { slug } = Astro.params;
+const db = createDb();
+
+// Get tag details
+const tagResult = await db.execute({
+  sql: `SELECT * FROM tags WHERE slug = ?`,
+  args: [slug]
+});
+
+if (!tagResult.results || tagResult.results.length === 0) {
+  return Astro.redirect('/404');
+}
+
+const tag = tagResult.results[0];
+
+// Get news with this tag
+const newsResult = await db.execute({
+  sql: `
+    SELECT n.*, u.name as author, c.name as category, c.slug as category_slug
+    FROM news n
+    LEFT JOIN users u ON n.author_id = u.id
+    LEFT JOIN categories c ON n.category_id = c.id
+    INNER JOIN news_tags nt ON n.id = nt.news_id
+    WHERE nt.tag_id = ? AND n.status = 'published' AND n.publish_date <= strftime('%s', 'now')
+    ORDER BY n.publish_date DESC
+    LIMIT 20
+  `,
+  args: [tag.id]
+});
+
+const news = newsResult.results || [];
+const siteName = import.meta.env.SITE_NAME || 'News Portal';
+---
+
+<BaseLayout 
+  title={`#${tag.name} - ${siteName}`}
+  description={tag.seo_description || `Articles tagged with ${tag.name}`}
+  canonical={`/tag/${tag.slug}`}
+>
+  <div class="container-custom py-6">
+    <!-- Tag Header -->
+    <div class="mb-8">
+      <h1 class="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white flex items-center">
+        <span class="text-primary-600 dark:text-primary-400 mr-2">#</span>
+        {tag.name}
+      </h1>
+      {tag.description && (
+        <p class="text-slate-600 dark:text-slate-400 mt-2">
+          {tag.description}
+        </p>
+      )}
+      <p class="text-sm text-slate-500 dark:text-slate-500 mt-2">
+        {news.length} articles
+      </p>
+    </div>
+
+    <!-- News Grid -->
+    {news.length > 0 ? (
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {news.map(item => (
+          <Card
+            title={item.title}
+            image={item.featured_image}
+            href={`/${item.slug}`}
+            category={item.category}
+            categoryHref={`/category/${item.category_slug}`}
+            date={item.publish_date}
+            author={item.author}
+            summary={item.summary}
+            readingTime={item.reading_time}
+            views={item.views}
+          />
+        ))}
+      </div>
+    ) : (
+      <div class="text-center py-12">
+        <p class="text-slate-500 dark:text-slate-400">No articles found with this tag.</p>
+      </div>
+    )}
+  </div>
+</BaseLayout>
