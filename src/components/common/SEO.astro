@@ -1,0 +1,77 @@
+---
+export interface Props {
+  title: string;
+  description?: string;
+  image?: string;
+  canonical?: string;
+  noIndex?: boolean;
+  noFollow?: boolean;
+  ogType?: string;
+  publishedTime?: string;
+  modifiedTime?: string;
+  author?: string;
+  keywords?: string;
+  schema?: any;
+}
+
+const {
+  title,
+  description = 'Latest news, updates, and insights from around the world.',
+  image = '/images/og-default.jpg',
+  canonical,
+  noIndex = false,
+  noFollow = false,
+  ogType = 'website',
+  publishedTime,
+  modifiedTime,
+  author,
+  keywords,
+  schema
+} = Astro.props;
+
+const siteName = import.meta.env.SITE_NAME || 'News Portal';
+const siteUrl = import.meta.env.SITE_URL || 'https://your-domain.com';
+const fullTitle = title === siteName ? title : `${title} | ${siteName}`;
+const canonicalUrl = canonical || Astro.url.pathname;
+const imageUrl = image.startsWith('http') ? image : `${siteUrl}${image}`;
+---
+
+<!-- Basic Meta -->
+<title>{fullTitle}</title>
+<meta name="description" content={description} />
+{keywords && <meta name="keywords" content={keywords} />}
+{author && <meta name="author" content={author} />}
+<link rel="canonical" href={`${siteUrl}${canonicalUrl}`} />
+
+<!-- Robots -->
+<meta name="robots" content={`${noIndex ? 'noindex' : 'index'}, ${noFollow ? 'nofollow' : 'follow'}`} />
+
+<!-- Open Graph -->
+<meta property="og:title" content={fullTitle} />
+<meta property="og:description" content={description} />
+<meta property="og:type" content={ogType} />
+<meta property="og:url" content={`${siteUrl}${canonicalUrl}`} />
+<meta property="og:image" content={imageUrl} />
+<meta property="og:site_name" content={siteName} />
+{publishedTime && <meta property="article:published_time" content={publishedTime} />}
+{modifiedTime && <meta property="article:modified_time" content={modifiedTime} />}
+{author && <meta property="article:author" content={author} />}
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={fullTitle} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={imageUrl} />
+
+<!-- Schema.org JSON-LD -->
+<script type="application/ld+json" set:html={JSON.stringify(schema || {
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": fullTitle,
+  "description": description,
+  "url": `${siteUrl}${canonicalUrl}`,
+  "publisher": {
+    "@type": "Organization",
+    "name": siteName
+  }
+})} />
