@@ -1,0 +1,47 @@
+---
+export interface Props {
+  size?: 'sm' | 'md' | 'lg' | 'xl';
+  color?: string;
+  text?: string;
+  fullScreen?: boolean;
+  className?: string;
+}
+
+const {
+  size = 'md',
+  color = 'primary',
+  text,
+  fullScreen = false,
+  className = ''
+} = Astro.props;
+
+const sizeClasses = {
+  sm: 'w-4 h-4 border-2',
+  md: 'w-8 h-8 border-3',
+  lg: 'w-12 h-12 border-4',
+  xl: 'w-16 h-16 border-4'
+};
+
+const colorClasses = {
+  primary: 'border-primary-500 border-t-transparent',
+  white: 'border-white border-t-transparent',
+  gray: 'border-slate-500 border-t-transparent'
+};
+
+const wrapperClasses = fullScreen 
+  ? 'fixed inset-0 flex items-center justify-center bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm z-50'
+  : 'flex flex-col items-center justify-center';
+---
+
+<div class={`${wrapperClasses} ${className}`}>
+  <div class="relative">
+    <div class={`${sizeClasses[size]} ${colorClasses[color]} rounded-full animate-spin`}></div>
+  </div>
+  {text && <p class="mt-4 text-sm text-slate-600 dark:text-slate-400">{text}</p>}
+</div>
+
+<style>
+  .border-3 {
+    border-width: 3px;
+  }
+</style>
