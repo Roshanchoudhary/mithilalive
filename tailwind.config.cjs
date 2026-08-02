@@ -31,5 +31,5 @@ module.exports = {
       }),
     },
   },
-plugins: [],
+  plugins: [],  // ← Ye line change karo
 };
