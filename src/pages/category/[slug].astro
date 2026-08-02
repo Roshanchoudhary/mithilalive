@@ -1,0 +1,144 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Card from '@/components/ui/Card.astro';
+import { createDb } from '@/db/index';
+
+export async function getStaticPaths() {
+  // Dynamic routing
+  return [];
+}
+
+const { slug } = Astro.params;
+const db = createDb();
+
+// Get category details
+const categoryResult = await db.execute({
+  sql: `SELECT * FROM categories WHERE slug = ? AND is_active = 1`,
+  args: [slug]
+});
+
+if (!categoryResult.results || categoryResult.results.length === 0) {
+  return Astro.redirect('/404');
+}
+
+const category = categoryResult.results[0];
+
+// Get news in this category
+const newsResult = await db.execute({
+  sql: `
+    SELECT n.*, u.name as author
+    FROM news n
+    LEFT JOIN users u ON n.author_id = u.id
+    WHERE n.category_id = ? AND n.status = 'published' AND n.publish_date <= strftime('%s', 'now')
+    ORDER BY n.publish_date DESC
+    LIMIT 20
+  `,
+  args: [category.id]
+});
+
+const news = newsResult.results || [];
+const siteName = import.meta.env.SITE_NAME || 'News Portal';
+---
+
+<BaseLayout 
+  title={`${category.name} - ${siteName}`}
+  description={category.seo_description || `Latest ${category.name} news and updates`}
+  canonical={`/category/${category.slug}`}
+>
+  <div class="container-custom py-6">
+    <!-- Category Header -->
+    <div class="mb-8">
+      <h1 class="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white">
+        {category.name}
+      </h1>
+      {category.description && (
+        <p class="text-slate-600 dark:text-slate-400 mt-2 text-lg">
+          {category.description}
+        </p>
+      )}
+      <p class="text-sm text-slate-500 dark:text-slate-500 mt-2">
+        {news.length} articles
+      </p>
+    </div>
+
+    <!-- News Grid -->
+    {news.length > 0 ? (
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {news.map(item => (
+          <Card
+            title={item.title}
+            image={item.featured_image}
+            href={`/${item.slug}`}
+            category={category.name}
+            categoryHref={`/category/${category.slug}`}
+            date={item.publish_date}
+            author={item.author}
+            summary={item.summary}
+            readingTime={item.reading_time}
+            views={item.views}
+          />
+        ))}
+      </div>
+    ) : (
+      <div class="text-center py-12">
+        <p class="text-slate-500 dark:text-slate-400">No articles found in this category.</p>
+      </div>
+    )}
+
+    <!-- Load More -->
+    {news.length >= 20 && (
+      <div class="mt-8 text-center">
+        <button id="loadMore" class="btn btn-secondary">
+          Load More
+        </button>
+      </div>
+    )}
+  </div>
+</BaseLayout>
+
+<script>
+  let page = 1;
+  const limit = 20;
+  const categorySlug = window.location.pathname.split('/').pop();
+
+  document.getElementById('loadMore')?.addEventListener('click', async () => {
+    page++;
+    const button = event.target;
+    button.textContent = 'Loading...';
+    button.disabled = true;
+
+    try {
+      const response = await fetch(`/api/news?category=${categorySlug}&page=${page}&limit=${limit}`);
+      const data = await response.json();
+      
+      if (data.data && data.data.length > 0) {
+        const grid = document.querySelector('.grid');
+        data.data.forEach(item => {
+          const card = document.createElement('div');
+          // Simplified card creation - in production use template
+          card.innerHTML = `
+            <div class="card p-4">
+              <a href="/${item.slug}">
+                <h3 class="font-bold hover:text-primary-600">${item.title}</h3>
+              </a>
+              <p class="text-sm text-slate-600 dark:text-slate-400 mt-1">${item.summary}</p>
+            </div>
+          `;
+          grid?.appendChild(card.firstElementChild);
+        });
+        
+        if (data.data.length < limit) {
+          button.style.display = 'none';
+        } else {
+          button.textContent = 'Load More';
+          button.disabled = false;
+        }
+      } else {
+        button.style.display = 'none';
+      }
+    } catch {
+      button.textContent = 'Load More';
+      button.disabled = false;
+    }
+  });
+</script>
