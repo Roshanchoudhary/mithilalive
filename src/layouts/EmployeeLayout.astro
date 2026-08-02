@@ -1,0 +1,76 @@
+---
+import { getSession } from '@/middleware/auth';
+
+const user = await getSession(Astro.request);
+if (!user || !['employee', 'editor', 'reporter'].includes(user.role)) {
+  return Astro.redirect('/login');
+}
+
+export interface Props {
+  title?: string;
+}
+
+const { title = 'Employee Dashboard' } = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title} - Employee - {import.meta.env.SITE_NAME || 'News Portal'}</title>
+    <link rel="stylesheet" href="/styles/globals.css" />
+  </head>
+  <body class="h-full bg-slate-50 dark:bg-slate-900">
+    <div class="min-h-screen flex flex-col">
+      <nav class="bg-white dark:bg-slate-800 shadow-sm border-b border-slate-200 dark:border-slate-700">
+        <div class="container-custom">
+          <div class="flex items-center justify-between h-16">
+            <div class="flex items-center space-x-8">
+              <a href="/employee" class="text-xl font-bold text-primary-600 dark:text-primary-400">
+                {import.meta.env.SITE_NAME || 'News Portal'}
+              </a>
+              <div class="hidden md:flex space-x-4">
+                <a href="/employee" class="text-slate-700 dark:text-slate-300 hover:text-primary-600">Dashboard</a>
+                <a href="/employee/news" class="text-slate-700 dark:text-slate-300 hover:text-primary-600">My News</a>
+                <a href="/employee/news/create" class="text-slate-700 dark:text-slate-300 hover:text-primary-600">Create News</a>
+                <a href="/employee/profile" class="text-slate-700 dark:text-slate-300 hover:text-primary-600">Profile</a>
+              </div>
+            </div>
+            <div class="flex items-center space-x-4">
+              <button id="darkModeToggle" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
+                <span class="dark:hidden">🌙</span>
+                <span class="hidden dark:inline">☀️</span>
+              </button>
+              <span class="text-sm text-slate-600 dark:text-slate-300 hidden md:inline">{user.name}</span>
+              <span class="text-xs px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full">
+                {user.role}
+              </span>
+              <a href="/api/auth/logout" class="text-sm text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300">
+                Logout
+              </a>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      <main class="flex-1 container-custom py-6">
+        <slot />
+      </main>
+
+      <footer class="bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 py-4">
+        <div class="container-custom text-center text-sm text-slate-500 dark:text-slate-400">
+          &copy; {new Date().getFullYear()} {import.meta.env.SITE_NAME || 'News Portal'} - Employee Panel
+        </div>
+      </footer>
+    </div>
+
+    <script>
+      // Dark mode toggle
+      document.getElementById('darkModeToggle')?.addEventListener('click', () => {
+        document.documentElement.classList.toggle('dark');
+        localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+      });
+    </script>
+  </body>
+</html>
