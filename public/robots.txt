@@ -1,0 +1,14 @@
+# robots.txt for News Portal CMS
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /employee/
+Disallow: /api/
+Disallow: /login/
+Disallow: /register/
+
+# Sitemap
+Sitemap: https://your-domain.com/sitemap.xml
+
+# Crawl-delay
+Crawl-delay: 10
