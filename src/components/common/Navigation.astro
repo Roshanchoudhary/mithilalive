@@ -1,0 +1,46 @@
+---
+export interface Props {
+  mobile?: boolean;
+}
+
+const { mobile = false } = Astro.props;
+
+const menuItems = [
+  { label: 'Home', href: '/' },
+  { label: 'Politics', href: '/category/politics' },
+  { label: 'Technology', href: '/category/technology' },
+  { label: 'Business', href: '/category/business' },
+  { label: 'Sports', href: '/category/sports' },
+  { label: 'Entertainment', href: '/category/entertainment' },
+  { label: 'Health', href: '/category/health' },
+  { label: 'Science', href: '/category/science' },
+];
+---
+
+{
+  mobile ? (
+    <div class="flex flex-col space-y-3">
+      {menuItems.map(item => (
+        <a 
+          key={item.href} 
+          href={item.href} 
+          class="text-slate-700 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 font-medium"
+        >
+          {item.label}
+        </a>
+      ))}
+    </div>
+  ) : (
+    <div class="flex items-center space-x-6">
+      {menuItems.map(item => (
+        <a 
+          key={item.href} 
+          href={item.href} 
+          class="text-slate-700 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 font-medium text-sm"
+        >
+          {item.label}
+        </a>
+      ))}
+    </div>
+  )
+}
