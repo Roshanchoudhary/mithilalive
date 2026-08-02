@@ -1,0 +1,126 @@
+---
+import EmployeeLayout from '@/layouts/EmployeeLayout.astro';
+import { getSession } from '@/middleware/auth';
+import { createDb } from '@/db/index';
+
+const user = await getSession(Astro.request);
+if (!user || !['employee', 'editor', 'reporter'].includes(user.role)) {
+  return Astro.redirect('/employee/login');
+}
+
+const db = createDb();
+
+// Get employee's news
+const newsResult = await db.execute({
+  sql: `
+    SELECT n.*, c.name as category_name,
+    CASE 
+      WHEN n.status = 'published' THEN 'badge-success'
+      WHEN n.status = 'pending' THEN 'badge-warning'
+      WHEN n.status = 'rejected' THEN 'badge-danger'
+      ELSE 'badge-info'
+    END as status_badge
+    FROM news n
+    LEFT JOIN categories c ON n.category_id = c.id
+    WHERE n.author_id = ?
+    ORDER BY n.created_at DESC
+  `,
+  args: [user.id]
+});
+
+const news = newsResult.results || [];
+---
+
+<EmployeeLayout title="My News">
+  <div class="max-w-6xl mx-auto">
+    <div class="flex items-center justify-between mb-6">
+      <h1 class="text-2xl font-bold text-slate-900 dark:text-white">My Articles</h1>
+      <a href="/employee/news/create" class="btn btn-primary">+ Create New</a>
+    </div>
+
+    {news.length > 0 ? (
+      <div class="bg-white dark:bg-slate-800 rounded-lg shadow overflow-hidden">
+        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+          <thead class="bg-slate-50 dark:bg-slate-700">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">
+                Title
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">
+                Category
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">
+                Status
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">
+                Date
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">
+                Views
+              </th>
+              <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody class="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
+            {news.map(item => (
+              <tr key={item.id} class="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                <td class="px-6 py-4">
+                  <a href={`/employee/news/${item.id}`} class="text-sm font-medium text-slate-900 dark:text-white hover:text-primary-600">
+                    {item.title}
+                  </a>
+                </td>
+                <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">
+                  {item.category_name || 'Uncategorized'}
+                </td>
+                <td class="px-6 py-4">
+                  <span class={`badge ${item.status_badge}`}>
+                    {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
+                  </span>
+                </td>
+                <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">
+                  {new Date(item.created_at * 1000).toLocaleDateString()}
+                </td>
+                <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">
+                  {item.views || 0}
+                </td>
+                <td class="px-6 py-4 text-right text-sm space-x-2">
+                  <a href={`/employee/news/${item.id}`} class="text-primary-600 hover:text-primary-700">Edit</a>
+                  {item.status === 'draft' && (
+                    <button onclick="deleteNews(${item.id})" class="text-red-600 hover:text-red-700">Delete</button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    ) : (
+      <div class="text-center py-12 bg-white dark:bg-slate-800 rounded-lg shadow">
+        <p class="text-slate-500 dark:text-slate-400">You haven't written any articles yet.</p>
+        <a href="/employee/news/create" class="btn btn-primary mt-4 inline-block">Create Your First Article</a>
+      </div>
+    )}
+  </div>
+</EmployeeLayout>
+
+<script>
+  async function deleteNews(id) {
+    if (!confirm('Are you sure you want to delete this article?')) return;
+
+    try {
+      const response = await fetch(`/api/news/${id}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        location.reload();
+      } else {
+        alert('Failed to delete article');
+      }
+    } catch {
+      alert('Network error. Please try again.');
+    }
+  }
+</script>
