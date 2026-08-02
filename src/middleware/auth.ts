@@ -8,7 +8,7 @@ export async function getSession(request: Request): Promise<JWTPayload | null> {
   
   if (!token) return null;
   
-  const payload = verifyToken(token);
+  const payload = await verifyToken(token);
   if (!payload) return null;
   
   // Verify user still exists and is active
