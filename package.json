@@ -8,9 +8,13 @@
     "preview": "astro preview",
     "astro": "astro",
     "cf-build": "astro build && wrangler pages deploy dist",
+    "deploy": "node scripts/deploy.js",
     "db:migrate": "wrangler d1 migrations apply news_db --remote",
     "db:local": "wrangler d1 migrations apply news_db --local",
-    "db:seed": "node scripts/seed.js"
+    "db:seed": "node scripts/seed.js",
+    "db:migrate:create": "wrangler d1 migrations create news_db",
+    "format": "prettier --write .",
+    "lint": "eslint src/**/*.{ts,astro}"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^10.3.0",
@@ -30,7 +34,13 @@
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.5",
     "@types/nodemailer": "^6.4.14",
+    "@typescript-eslint/eslint-plugin": "^7.5.0",
+    "@typescript-eslint/parser": "^7.5.0",
     "drizzle-kit": "^0.20.14",
+    "eslint": "^8.57.0",
+    "eslint-plugin-astro": "^0.31.4",
+    "prettier": "^3.2.5",
+    "prettier-plugin-astro": "^0.13.0",
     "typescript": "^5.4.2",
     "wrangler": "^3.36.0"
   }
