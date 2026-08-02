@@ -1,0 +1,165 @@
+---
+import EmployeeLayout from '@/layouts/EmployeeLayout.astro';
+import { getSession } from '@/middleware/auth';
+import { createDb } from '@/db/index';
+
+const user = await getSession(Astro.request);
+if (!user || !['employee', 'editor', 'reporter'].includes(user.role)) {
+  return Astro.redirect('/employee/login');
+}
+
+const db = createDb();
+
+// Get user profile
+const userResult = await db.execute({
+  sql: `SELECT * FROM users WHERE id = ?`,
+  args: [user.id]
+});
+
+const profile = userResult.results?.[0] || user;
+---
+
+<EmployeeLayout title="My Profile">
+  <div class="max-w-4xl mx-auto">
+    <h1 class="text-2xl font-bold text-slate-900 dark:text-white mb-6">My Profile</h1>
+
+    <form id="profileForm" class="bg-white dark:bg-slate-800 rounded-lg shadow p-6 space-y-6">
+      <!-- Profile Picture -->
+      <div class="flex items-center gap-6">
+        <div class="w-24 h-24 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center text-3xl text-primary-600 dark:text-primary-400 overflow-hidden">
+          {profile.avatar ? (
+            <img src={profile.avatar} alt={profile.name} class="w-full h-full object-cover" />
+          ) : (
+            profile.name.charAt(0).toUpperCase()
+          )}
+        </div>
+        <div>
+          <p class="text-sm text-slate-500 dark:text-slate-400">Profile Picture</p>
+          <p class="text-xs text-slate-400 dark:text-slate-500">Upload via Media Library</p>
+          <input type="hidden" id="avatar" name="avatar" value={profile.avatar || ''} />
+        </div>
+      </div>
+
+      <!-- Name -->
+      <div>
+        <label for="name" class="label">Full Name *</label>
+        <input type="text" id="name" name="name" class="input" value={profile.name} required />
+      </div>
+
+      <!-- Email -->
+      <div>
+        <label for="email" class="label">Email *</label>
+        <input type="email" id="email" name="email" class="input" value={profile.email} required />
+      </div>
+
+      <!-- Mobile -->
+      <div>
+        <label for="mobile" class="label">Mobile Number</label>
+        <input type="tel" id="mobile" name="mobile" class="input" value={profile.mobile || ''} />
+      </div>
+
+      <!-- Bio -->
+      <div>
+        <label for="bio" class="label">Bio</label>
+        <textarea id="bio" name="bio" rows="4" class="input" placeholder="Tell us about yourself...">{profile.bio || ''}</textarea>
+      </div>
+
+      <!-- Location -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label for="country" class="label">Country</label>
+          <input type="text" id="country" name="country" class="input" value={profile.country || ''} />
+        </div>
+        <div>
+          <label for="state" class="label">State</label>
+          <input type="text" id="state" name="state" class="input" value={profile.state || ''} />
+        </div>
+        <div>
+          <label for="city" class="label">City</label>
+          <input type="text" id="city" name="city" class="input" value={profile.city || ''} />
+        </div>
+      </div>
+
+      <!-- Password Change -->
+      <details class="border border-slate-200 dark:border-slate-700 rounded-lg p-4">
+        <summary class="cursor-pointer font-medium text-slate-700 dark:text-slate-300">
+          Change Password
+        </summary>
+        <div class="mt-4 space-y-4">
+          <div>
+            <label for="newPassword" class="label">New Password</label>
+            <input type="password" id="newPassword" name="newPassword" class="input" placeholder="Enter new password (min 8 chars)" />
+          </div>
+          <div>
+            <label for="confirmPassword" class="label">Confirm Password</label>
+            <input type="password" id="confirmPassword" name="confirmPassword" class="input" placeholder="Confirm new password" />
+          </div>
+        </div>
+      </details>
+
+      <!-- Submit -->
+      <button type="submit" class="btn btn-primary">Update Profile</button>
+    </form>
+  </div>
+</EmployeeLayout>
+
+<script>
+  document.getElementById('profileForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const formData = new FormData(form);
+
+    const data = {
+      name: formData.get('name'),
+      email: formData.get('email'),
+      mobile: formData.get('mobile'),
+      bio: formData.get('bio'),
+      country: formData.get('country'),
+      state: formData.get('state'),
+      city: formData.get('city'),
+      avatar: formData.get('avatar')
+    };
+
+    const newPassword = formData.get('newPassword');
+    const confirmPassword = formData.get('confirmPassword');
+
+    if (newPassword) {
+      if (newPassword.length < 8) {
+        alert('Password must be at least 8 characters');
+        return;
+      }
+      if (newPassword !== confirmPassword) {
+        alert('Passwords do not match');
+        return;
+      }
+      data.password = newPassword;
+    }
+
+    const button = form.querySelector('button[type="submit"]');
+    const originalText = button.textContent;
+    button.textContent = 'Saving...';
+    button.disabled = true;
+
+    try {
+      const response = await fetch(`/api/users/${${profile.id}}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        alert('Profile updated successfully!');
+        location.reload();
+      } else {
+        alert(result.error || 'Failed to update profile');
+      }
+    } catch {
+      alert('Network error. Please try again.');
+    } finally {
+      button.textContent = originalText;
+      button.disabled = false;
+    }
+  });
+</script>
