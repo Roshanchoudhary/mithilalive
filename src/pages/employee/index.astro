@@ -1,0 +1,129 @@
+---
+import EmployeeLayout from '@/layouts/EmployeeLayout.astro';
+import { createDb } from '@/db/index';
+import { getSession } from '@/middleware/auth';
+
+const user = await getSession(Astro.request);
+if (!user || !['employee', 'editor', 'reporter'].includes(user.role)) {
+  return Astro.redirect('/login');
+}
+
+const db = createDb();
+
+// Get employee's news statistics
+const statsResult = await db.execute({
+  sql: `
+    SELECT 
+      COUNT(*) as total,
+      SUM(CASE WHEN status = 'published' THEN 1 ELSE 0 END) as published,
+      SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
+      SUM(CASE WHEN status = 'draft' THEN 1 ELSE 0 END) as draft,
+      SUM(CASE WHEN status = 'rejected' THEN 1 ELSE 0 END) as rejected
+    FROM news
+    WHERE author_id = ?
+  `,
+  args: [user.id]
+});
+
+const stats = statsResult.results?.[0] || {
+  total: 0,
+  published: 0,
+  pending: 0,
+  draft: 0,
+  rejected: 0
+};
+
+// Get employee's recent news
+const recentNews = await db.execute({
+  sql: `
+    SELECT n.*, c.name as category
+    FROM news n
+    LEFT JOIN categories c ON n.category_id = c.id
+    WHERE n.author_id = ?
+    ORDER BY n.created_at DESC
+    LIMIT 10
+  `,
+  args: [user.id]
+});
+---
+
+<EmployeeLayout title="Dashboard">
+  <div class="space-y-6">
+    <!-- Welcome -->
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
+      <h2 class="text-2xl font-bold text-slate-900 dark:text-white">
+        Welcome back, {user.name}! 👋
+      </h2>
+      <p class="text-slate-600 dark:text-slate-400 mt-1">
+        {user.role.charAt(0).toUpperCase() + user.role.slice(1)} Dashboard
+      </p>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div class="bg-white dark:bg-slate-800 rounded-lg shadow p-4">
+        <p class="text-sm text-slate-500 dark:text-slate-400">Total Articles</p>
+        <p class="text-2xl font-bold text-slate-900 dark:text-white">{stats.total}</p>
+      </div>
+      <div class="bg-white dark:bg-slate-800 rounded-lg shadow p-4">
+        <p class="text-sm text-slate-500 dark:text-slate-400">Published</p>
+        <p class="text-2xl font-bold text-green-600 dark:text-green-400">{stats.published}</p>
+      </div>
+      <div class="bg-white dark:bg-slate-800 rounded-lg shadow p-4">
+        <p class="text-sm text-slate-500 dark:text-slate-400">Pending</p>
+        <p class="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{stats.pending}</p>
+      </div>
+      <div class="bg-white dark:bg-slate-800 rounded-lg shadow p-4">
+        <p class="text-sm text-slate-500 dark:text-slate-400">Drafts</p>
+        <p class="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.draft}</p>
+      </div>
+      <div class="bg-white dark:bg-slate-800 rounded-lg shadow p-4">
+        <p class="text-sm text-slate-500 dark:text-slate-400">Rejected</p>
+        <p class="text-2xl font-bold text-red-600 dark:text-red-400">{stats.rejected}</p>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
+      <h3 class="font-semibold text-lg mb-4 text-slate-900 dark:text-white">Quick Actions</h3>
+      <div class="flex flex-wrap gap-3">
+        <a href="/employee/news/create" class="btn btn-primary">✏️ Create New Article</a>
+        <a href="/employee/news" class="btn btn-secondary">📰 My Articles</a>
+        <a href="/employee/profile" class="btn btn-secondary">👤 Edit Profile</a>
+      </div>
+    </div>
+
+    <!-- Recent News -->
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
+      <h3 class="font-semibold text-lg mb-4 text-slate-900 dark:text-white">My Recent Articles</h3>
+      {recentNews.results && recentNews.results.length > 0 ? (
+        <div class="space-y-3">
+          {recentNews.results.map(item => (
+            <div key={item.id} class="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-3">
+              <div class="flex-1 min-w-0">
+                <a href={`/employee/news/${item.id}`} class="text-sm font-medium hover:text-primary-600">
+                  {item.title}
+                </a>
+                {item.category && (
+                  <span class="text-xs text-slate-500 dark:text-slate-400 ml-2">
+                    in {item.category}
+                  </span>
+                )}
+              </div>
+              <span class={`badge ${
+                item.status === 'published' ? 'badge-success' :
+                item.status === 'pending' ? 'badge-warning' :
+                item.status === 'rejected' ? 'badge-danger' :
+                'badge-info'
+              }`}>
+                {item.status}
+              </span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p class="text-slate-500 dark:text-slate-400 text-sm">You haven't written any articles yet.</p>
+      )}
+    </div>
+  </div>
+</EmployeeLayout>
